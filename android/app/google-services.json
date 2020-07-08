@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "598236502355",
+    "firebase_url": "https://flutter-keto.firebaseio.com",
+    "project_id": "flutter-keto",
+    "storage_bucket": "flutter-keto.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:598236502355:android:0b099fe07793df2230a9a6",
+        "android_client_info": {
+          "package_name": "com.kevinf.flutter_keto"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "598236502355-pnbcgh0gg0ni5fdeo7mjvfrbikcd0llf.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.kevinf.flutter_keto",
+            "certificate_hash": "d1dca010a18f159259acb933f68dee10f2109390"
+          }
+        },
+        {
+          "client_id": "598236502355-lbnu93atko8n3qqrr7oatubqucq86abk.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDV0RM9LhC38ufzosuayGAKlhda8qBcKaA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "598236502355-lbnu93atko8n3qqrr7oatubqucq86abk.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
