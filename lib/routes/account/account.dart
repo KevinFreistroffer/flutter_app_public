@@ -112,7 +112,7 @@ class _AccountState extends State<Account> {
                     fontWeight: FontWeight.w100,
                   ),
                 ),
-                SizedBox(height: 37),
+                SizedBox(height: 32),
                 Text(
                     'This action cannot be undone. This will permanently delete this account.'),
               ],
@@ -137,7 +137,7 @@ class _AccountState extends State<Account> {
                     Navigator.of(context).pop();
                   },
                 ),
-                SizedBox(height: 18.5),
+                SizedBox(height: 16),
                 GestureDetector(
                   child: Text(
                     'Cancel',
@@ -238,7 +238,7 @@ class _AccountState extends State<Account> {
                                             )
                                           ],
                                         ),
-                                        SizedBox(height: 40.875),
+                                        SizedBox(height: 32),
                                         Row(
                                           children: <Widget>[
                                             Text(
@@ -263,7 +263,7 @@ class _AccountState extends State<Account> {
                                             ),
                                           ],
                                         ),
-                                        SizedBox(height: 37),
+                                        SizedBox(height: 32),
                                         Row(
                                           children: <Widget>[
                                             Text(
@@ -289,7 +289,7 @@ class _AccountState extends State<Account> {
                                             ),
                                           ],
                                         ),
-                                        SizedBox(height: 37),
+                                        SizedBox(height: 32),
                                         Row(
                                           children: <Widget>[
                                             Text(
@@ -315,7 +315,7 @@ class _AccountState extends State<Account> {
                                             ),
                                           ],
                                         ),
-                                        SizedBox(height: 37),
+                                        SizedBox(height: 32),
                                         Column(
                                           crossAxisAlignment:
                                               CrossAxisAlignment.start,
@@ -350,7 +350,7 @@ class _AccountState extends State<Account> {
                                             ),
                                           ],
                                         ),
-                                        SizedBox(height: 37),
+                                        SizedBox(height: 32),
                                         Row(
                                           children: <Widget>[
                                             Text(
@@ -380,7 +380,7 @@ class _AccountState extends State<Account> {
                                     ),
                                   ),
                                 ),
-                                SizedBox(height: 37),
+                                SizedBox(height: 32),
                                 Visibility(
                                   visible: user.platform ==
                                       Constants.EMAIL_OR_USERNAME,
@@ -394,7 +394,7 @@ class _AccountState extends State<Account> {
                                     ),
                                   ),
                                 ),
-                                SizedBox(height: 37),
+                                SizedBox(height: 32),
                                 Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: <Widget>[

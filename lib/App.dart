@@ -1,6 +1,4 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
 import 'routes/home/home.dart';
@@ -28,11 +26,6 @@ class App extends StatelessWidget {
   final LoadingService _loadingService = LoadingService();
   final String initialRoute;
   App(this.initialRoute);
-
-  @override
-  void initState() {
-    // _loadingService.add(isOpen: true);
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -82,7 +75,7 @@ class App extends StatelessWidget {
       //..bg1 = Color.fromRGBO(82, 95, 103, 1)
       ..surface = Colors.white
       ..error = Colors.red.shade400
-      ..onPrimary = Colors.black
+      ..onPrimary = Colors.white
       ..onPrimaryVariant = Colors.black
       ..onSecondary = Colors.white
       ..onBackground = Colors.white

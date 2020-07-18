@@ -62,7 +62,7 @@ class _PasswordsStepState extends State<PasswordsStep> {
       appBar: AppBar(
         automaticallyImplyLeading: false,
         iconTheme: IconThemeData(
-          color: theme.onBackground.withOpacity(0.25),
+          color: theme.onBackground.withOpacity(0.5),
         ),
         title: Text(
           'Step 2',
@@ -94,7 +94,7 @@ class _PasswordsStepState extends State<PasswordsStep> {
                 "Create a password",
                 style: TextStyle(fontSize: 25, color: theme.onBackground),
               ),
-              SizedBox(height: 7.5),
+              SizedBox(height: 8),
               new Theme(
                 data: theme.themeData,
                 child: TextFormField(
@@ -121,7 +121,7 @@ class _PasswordsStepState extends State<PasswordsStep> {
                   },
                 ),
               ),
-              SizedBox(height: 20),
+              SizedBox(height: 32),
               Text(
                 "Enter password again",
                 style: TextStyle(
@@ -129,7 +129,7 @@ class _PasswordsStepState extends State<PasswordsStep> {
                   color: theme.onBackground,
                 ),
               ),
-              SizedBox(height: 7.5),
+              SizedBox(height: 8),
               new Theme(
                 data: theme.themeData,
                 child: TextFormField(
@@ -154,7 +154,7 @@ class _PasswordsStepState extends State<PasswordsStep> {
                   },
                 ),
               ),
-              SizedBox(height: 37),
+              SizedBox(height: 32),
               SubmitButton(
                 text: 'Next',
                 formIsValid: widget.password.isValid() &&

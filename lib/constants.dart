@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class Constants {
-  static const String APP_NAME = 'SUNSCRIPT';
+  static const String APP_NAME = 'FlutterPi';
   static const String ERROR_USERNAME_REQUIRED = 'Username is required.';
   static const String ERROR_PASSWORD_REQUIRED = 'Password is required.';
   static const String ERROR_CONFIRM_YOUR_PASSWORD_REQUIRED =
@@ -52,8 +52,10 @@ class Constants {
   static const String ERROR_ACCOUNT_EXISTS_WITH_EMAIL_OR_USERNAME =
       'The email address and or username are already registered.';
   static const String ERROR_INVALID_VERIFICATION_CODE = 'Invalid SMS code.';
+  static const String ERROR_PLEASE_CHECK_NETWORK =
+      'An error occurred. Please make sure your internet connection is available.';
   static const String ERROR_NETWORK_REQUEST_FAILED =
-      'An error occurred. Possibly your internet connection? Please try again.';
+      'A network error occurred. Please check your internet connection is connected, then try again.';
   static const String ERROR_PLEASE_TRY_AGAIN =
       'An error occurred, please try again.';
   static const String ERROR_TOO_MANY_PASSWORD_RESET_REQUESTS =
@@ -101,6 +103,12 @@ class Constants {
   static const String DISCONNECT = 'Disconnect';
   static const String DISCONNECTED = 'Disconnected';
   static const String LOCATION_NOT_AVAILABLE = 'N/A';
+  static const String SSH_CONNECT_SUCCESS = 'session_connected';
+
+  static const String PI_SCRIPT_DIRECTORY =
+      '/home/pi/.local/share/applications';
+
+  static const double APP_SPACING_SIZE = 16.0;
 
   // styles
 }

@@ -52,12 +52,13 @@ class _SubmitButtonState extends State<SubmitButton> {
       child = Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: <Widget>[
-          Text('Loading'),
-          // Loading(
-          //   indicator: BallPulseIndicator(),
-          //   size: 20.0,
-          //   color: theme.onBackground.withOpacity(0.75),
-          // ),
+          Text('THINKING'),
+          SizedBox(width: size.width * .05),
+          Loading(
+            indicator: BallPulseIndicator(),
+            size: 20.0,
+            color: theme.onBackground,
+          ),
         ],
       );
     }
@@ -86,7 +87,7 @@ class _SubmitButtonState extends State<SubmitButton> {
             child: RaisedButton(
               shape: shape,
               padding: EdgeInsets.fromLTRB(10, 17, 10, 17),
-              disabledColor: theme.background,
+              disabledColor: theme.secondary,
               disabledTextColor: theme.onBackground,
               onPressed: widget.isSubmitting ? null : widget.handleOnSubmit,
               child: child,

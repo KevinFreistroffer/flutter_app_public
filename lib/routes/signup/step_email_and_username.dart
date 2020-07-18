@@ -51,7 +51,7 @@ class EmailAndUsernameStep extends StatelessWidget {
           ]),
           child: AppBar(
             iconTheme: IconThemeData(
-              color: theme.onBackground.withOpacity(0.25),
+              color: theme.onBackground.withOpacity(0.5),
             ),
             title: Text(
               'Step 1',
@@ -88,7 +88,7 @@ class EmailAndUsernameStep extends StatelessWidget {
                 ),
               ],
             ),
-            SizedBox(height: 7.5),
+            SizedBox(height: 8),
             new Theme(
               data: theme.themeData,
               child: TextFormField(
@@ -108,7 +108,7 @@ class EmailAndUsernameStep extends StatelessWidget {
                 },
               ),
             ),
-            SizedBox(height: 25),
+            SizedBox(height: 32),
             Row(
               children: <Widget>[
                 Text(
@@ -120,7 +120,7 @@ class EmailAndUsernameStep extends StatelessWidget {
                 ),
               ],
             ),
-            SizedBox(height: 9.5),
+            SizedBox(height: 8),
             new Theme(
               data: theme.themeData,
               child: TextFormField(
@@ -138,7 +138,7 @@ class EmailAndUsernameStep extends StatelessWidget {
                 },
               ),
             ),
-            SizedBox(height: 37),
+            SizedBox(height: 32),
             SubmitButton(
               text: 'Next',
               formIsValid: emailAndUsername.isValid(),

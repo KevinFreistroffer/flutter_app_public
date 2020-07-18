@@ -1,21 +1,23 @@
+import 'dart:async';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:provider/provider.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../../constants.dart';
 import '../../globals.dart';
 import './styles.dart';
 import '../../theme.dart';
 
-class LoadingScreen extends StatelessWidget {
-  final Globals _globals = Globals();
-  String title;
-  String text;
-  String size;
-  dynamic customIcon;
+class LoadingScreen extends StatefulWidget {
+  final String title;
+  final String text;
+  final String size;
+  final dynamic customIcon;
+  final bool showIcon;
+  final bool showSuccessIcon;
+
   dynamic _icon;
-  bool showIcon;
-  bool showSuccessIcon;
 
   LoadingScreen({
     Key key,
@@ -23,93 +25,93 @@ class LoadingScreen extends StatelessWidget {
     this.text = '',
     this.size = Constants.MEDIUM,
     this.customIcon,
-    this.showIcon = true,
-    this.showSuccessIcon = false,
+    this.showIcon,
+    this.showSuccessIcon,
   }) : super(key: key);
 
   @override
+  _LoadingScreenState createState() => _LoadingScreenState();
+}
+
+class _LoadingScreenState extends State<LoadingScreen> {
+  final Globals _globals = Globals();
+  var _icon;
+  bool increment = true;
+  bool decrement = false;
+
+  @override
+  void initState() {}
+
+  @override
   Widget build(BuildContext context) {
-    final Size screenSize = MediaQuery.of(context).size;
+    final Size mediaSize = MediaQuery.of(context).size;
     final AppTheme theme = Provider.of<AppTheme>(context);
     double iconSize;
 
-    if (size == Constants.SMALL) {
+    if (widget.size == Constants.SMALL) {
       iconSize = 25.0;
-    } else if (size == Constants.MEDIUM) {
+    } else if (widget.size == Constants.MEDIUM) {
       iconSize = 50.0;
-    } else if (size == Constants.LARGE) {
+    } else if (widget.size == Constants.LARGE) {
       iconSize = 100.0;
     }
 
-    if (showSuccessIcon) {
-      _icon = SpinKitFoldingCube(color: theme.secondary, size: iconSize);
+    if (widget.showSuccessIcon != null && widget.showSuccessIcon == true) {
+      _icon = SpinKitFoldingCube(color: theme.onBackground, size: iconSize);
     } else {
-      _icon = customIcon ??
-          SpinKitFoldingCube(color: theme.secondary, size: iconSize);
+      _icon = widget.customIcon ??
+          SpinKitFoldingCube(color: theme.onBackground, size: iconSize);
     }
 
     return Container(
+      padding: EdgeInsets.only(
+          left: mediaSize.width * .1, right: mediaSize.width * .1),
       key: _globals.scaffoldKey,
-      height: screenSize.height,
-      width: screenSize.width,
-      color: Colors.white,
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+      height: mediaSize.height,
+      width: mediaSize.width,
+      color: theme.primary,
+      child: Stack(
         children: <Widget>[
-          Visibility(
-            visible: title.trim().isNotEmpty,
+          Container(
+            height: mediaSize.height,
             child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
               children: <Widget>[
-                Container(
-                  child: Text(
-                    title,
-                    style: TextStyle(
-                      fontSize: Styles.title['fontSize'],
-                      color: theme.secondary,
-                      decoration: TextDecoration.none,
-                    ),
-                  ),
-                ),
-                SizedBox(height: 40),
+                Visibility(visible: widget.showIcon, child: _icon)
               ],
             ),
           ),
-          Visibility(
-              visible: text.trim().isNotEmpty,
-              child: Column(
-                children: <Widget>[
-                  Text(
-                    text,
-                    style: TextStyle(
-                      fontSize: Styles.text['fontSize'],
-                      color: theme.secondary,
-                      decoration: TextDecoration.none,
-                    ),
+          Container(
+            height: mediaSize.height - mediaSize.height * .1,
+            width: mediaSize.width,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.end,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: <Widget>[
+                Visibility(
+                  visible: widget.text.trim().isNotEmpty,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: <Widget>[
+                      Text(
+                        widget.text.toUpperCase(),
+                        style: TextStyle(
+                          fontSize: Styles.text['fontSize'],
+                          letterSpacing: 5.0,
+                          fontWeight: FontWeight.w100,
+                          color: theme.onBackground,
+                          decoration: TextDecoration.none,
+                        ),
+                      ),
+                    ],
                   ),
-                  SizedBox(height: 40),
-                ],
-              )),
-          Visibility(
-            visible: showIcon,
-            child: _icon,
+                )
+              ],
+            ),
           ),
         ],
       ),
     );
   }
-
-  // LoadingScreen({
-  //   Key key,
-  //   String title,
-  //   String text,
-  //   dynamic icon,
-  //   bool showIcon,
-  // }) : super(key: key);
-
-  // @override
-  // _LoadingState createState() => _LoadingState();
 }
-
-// class _LoadingState extends State<LoadingScreen> {
-
-// }

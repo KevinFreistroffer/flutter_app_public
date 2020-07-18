@@ -164,7 +164,7 @@ class _PasswordResetState extends State<PasswordReset> {
                                   fontSize: 25,
                                 )),
                           ),
-                          SizedBox(height: 7.5),
+                          SizedBox(height: 8),
                           new Theme(
                             data: theme.themeData,
                             child: TextFormField(
@@ -187,7 +187,7 @@ class _PasswordResetState extends State<PasswordReset> {
                                   _handlesFormInputsChangeValue(value),
                             ),
                           ),
-                          SizedBox(height: 37),
+                          SizedBox(height: 32),
                           Row(
                             children: <Widget>[
                               Expanded(
@@ -201,7 +201,7 @@ class _PasswordResetState extends State<PasswordReset> {
                               ),
                             ],
                           ),
-                          SizedBox(height: 18.5),
+                          SizedBox(height: 16),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: <Widget>[

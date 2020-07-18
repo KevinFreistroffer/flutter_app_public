@@ -5,6 +5,7 @@ import 'package:flutter_keto/services/database.service.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:meta/meta.dart';
 import 'storage.service.dart';
+import 'loading.service.dart';
 import '../constants.dart';
 
 class AuthenticationService {
@@ -12,6 +13,7 @@ class AuthenticationService {
   final GoogleSignIn _googleSignIn;
   final StorageService _storageService;
   final DatabaseService _databaseService;
+  final LoadingService _loadingService;
   final StreamController phoneAuthenticationController =
       StreamController<Map>.broadcast();
 
@@ -19,61 +21,97 @@ class AuthenticationService {
       : _firebaseAuth = firebaseAuth ?? FirebaseAuth.instance,
         _googleSignIn = googleSignin ?? GoogleSignIn(),
         _storageService = StorageService(),
-        _databaseService = DatabaseService();
+        _databaseService = DatabaseService(),
+        _loadingService = LoadingService();
 
-  Future<AuthCredential> signInWithGoogle() async {
-    final GoogleSignInAccount googleUser = await _googleSignIn.signIn();
-    final GoogleSignInAuthentication googleAuth =
-        await googleUser.authentication;
-    final AuthCredential authCredential = GoogleAuthProvider.getCredential(
-      accessToken: googleAuth.accessToken,
-      idToken: googleAuth.idToken,
-    );
+  Future<dynamic> beginSignInWithGoogle() async {
+    var result;
+    GoogleSignInAuthentication googleAuth;
+    AuthCredential authCredential;
+    GoogleSignInAccount signInResponse = await googleSignIn();
 
-    return authCredential;
+    print('signInResponse $signInResponse');
+
+    // Shouldn't have to check because the function is expecting to return this type
+    // and the value type is already set to expect to be of GoogleSignInAccount
+    if (signInResponse is GoogleSignInAccount) {
+      googleAuth = await signInResponse.authentication;
+    } else {
+      print('signInResponse is NOT GoogleSignInAccount $signInResponse');
+      return Constants.ERROR_PLEASE_CHECK_NETWORK;
+    }
+
+    try {
+      authCredential = GoogleAuthProvider.getCredential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
+
+      result = authCredential;
+    } catch (error) {
+      print(
+          'An error occurred in authenticationService.signInWithGoogle() $error');
+      result = error.toString();
+    }
+
+    return result;
+  }
+
+  Future<GoogleSignInAccount> googleSignIn() async {
+    return _googleSignIn.signIn();
   }
 
   Future<dynamic> signInWithCredential(AuthCredential authCredential) async {
-    dynamic response;
+    dynamic value;
     try {
-      response = await _firebaseAuth.signInWithCredential(authCredential);
+      value = await _firebaseAuth.signInWithCredential(authCredential);
     } catch (error) {
-      response = error.toString();
+      var e = error.toString();
+      if (e.contains('ERROR_INVALID_CREDENTIAL')) {
+        value = Constants.ERROR_INVALID_CREDENTIAL;
+      } else if (e.contains('ERROR_USER_DISABLED')) {
+        value = Constants.ERROR_USER_DISABLED;
+      } else if (e.contains('ERROR_ACCOUNT_EXISTS_WITH_DIFFERENT_CREDENTIAL')) {
+        value = Constants.ERROR_ACCOUNT_EXISTS_WITH_DIFFERENT_CREDENTIAL;
+      } else if (e.contains('ERROR_INVALID_ACTION_CODE')) {
+        value =
+            'An error occurred. Please try again.'; // Shouldn't hit this error as not using an email link to sign in.
+      }
     }
-    return response;
+    return value;
   }
 
   Future<dynamic> signInWithEmailAndPassword({
     @required String email,
     @required String password,
   }) async {
-    var response;
+    var value;
 
     try {
-      response = await _firebaseAuth.signInWithEmailAndPassword(
+      value = await _firebaseAuth.signInWithEmailAndPassword(
         email: email.toString().trim(),
         password: password.toString().trim(),
       );
     } catch (e) {
       print('An error occurred calling signInWithEmailAndPassword $e');
       if (e.toString().contains('ERROR_INVALID_EMAIL')) {
-        response = Constants.ERROR_INVALID_EMAIL;
+        value = Constants.ERROR_INVALID_EMAIL;
       } else if (e.toString().contains('ERROR_WRONG_PASSWORD')) {
-        response = Constants.ERROR_WRONG_PASSWORD;
+        value = Constants.ERROR_WRONG_PASSWORD;
       } else if (e.toString().contains('ERROR_USER_NOT_FOUND')) {
-        response = Constants.ERROR_USER_NOT_FOUND;
+        value = Constants.ERROR_USER_NOT_FOUND;
       } else if (e.toString().contains('ERROR_USER_DISABLED')) {
-        response = Constants.ERROR_USER_DISABLED;
+        value = Constants.ERROR_USER_DISABLED;
       } else if (e.toString().contains('ERROR_TOO_MANY_REQUESTS')) {
-        response = Constants.ERROR_TOO_MANY_SIGNIN_REQUESTS;
+        value = Constants.ERROR_TOO_MANY_SIGNIN_REQUESTS;
       } else if (e.toString().contains('ERROR_OPERATION_NOT_ALLOWED')) {
-        response = Constants.ERROR_OPERATION_NOT_ALLOWED;
+        value = Constants.ERROR_OPERATION_NOT_ALLOWED;
       } else {
-        response = e.toString();
+        value = e.toString();
       }
     }
 
-    return response;
+    return value;
   }
 
   AuthCredential getCredential(String verificationID, String smsCode) {

@@ -142,13 +142,13 @@ class _EnterSMSCodeState extends State<EnterSMSCode> {
                   'Please enter the SMS Code Sent To Your Phone',
                   style: TextStyle(fontSize: 35.0),
                 ),
-                SizedBox(height: 20),
+                SizedBox(height: 16),
                 Text(
                     'To make sure this number is yours, we will send you a text message with a 6-digit verification code. Standard rates apply',
                     style: TextStyle(
                       fontSize: 20,
                     )),
-                SizedBox(height: 20),
+                SizedBox(height: 16),
                 Form(
                   //key: _store.phoneNumberFormKey,
                   child: Column(
@@ -173,7 +173,7 @@ class _EnterSMSCodeState extends State<EnterSMSCode> {
                         keyboardType: TextInputType.number,
                         maxLength: 6,
                       ),
-                      SizedBox(height: 20),
+                      SizedBox(height: 16),
                       Container(
                         width: 130,
                         child: RaisedButton(

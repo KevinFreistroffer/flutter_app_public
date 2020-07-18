@@ -11,24 +11,37 @@ class RaspberryPiService {
     passwordOrKey: Config.password,
   );
 
-  Future<String> connectToClient() async {
-    print('RaspberryPi Service connectToClient()');
-    String result;
-    try {
-      result = await client.connect();
-      if (result == "session_connected") return result;
-      client.disconnect();
-    } on PlatformException catch (e) {
-      print(
-        'An error occurred calling client.connect() \nError: ${e.code}\nError Message: ${e.message}',
-      );
-    }
+  SSHClient getClient() => client;
 
-    return result;
+  Future<String> connect() async {
+    return client.connect();
   }
 
-  disconnectClient() {
-    print('raspberryPi disconnectClient()');
+  Future<void> disconnect() async {
+    await exitTheScript();
     client.disconnect();
+  }
+
+  Future<void> exitTheScript() async {
+    await client.execute(
+      'cd ${Constants.PI_SCRIPT_DIRECTORY}; ls\n; python3 -c\'import python.py; python.exitScript()',
+    );
+  }
+
+  Future<String> startScript() async {
+    var startScriptResponse = await client.execute(
+      'cd ${Constants.PI_SCRIPT_DIRECTORY}; ls\n; sudo python3 python.py',
+    );
+
+    print('startScriptResponse $startScriptResponse');
+
+    return startScriptResponse;
+  }
+
+  Future<void> createWPASupplicantFileWithNetworkDetails(
+      String ssid, String psk) async {
+    await client.execute(
+      'cd /etc; printf "network={\n\tssid=\"$ssid\"\n\tpsk=\"psk\"\n\tpriority=1\n}" wpa_supplicant',
+    );
   }
 }

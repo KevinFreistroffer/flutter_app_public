@@ -39,6 +39,8 @@ void main() async {
      */
     }
 
+    _storageService.removeAll();
+
     // But for now just navigate to the home page
     runApp(
       MultiProvider(

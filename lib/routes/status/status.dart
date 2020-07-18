@@ -78,18 +78,12 @@ class _StatusState extends State<Status> with TickerProviderStateMixin {
   }
 
   Future<void> _sshToRaspberryPi() async {
-    _solarService.getFractionalYear();
-    _solarService.getEQTime();
-    _solarService.getDecl();
-    _solarService.getTimeOffset();
-    _solarService.getTrueSolarTime();
-    _solarService.getSolarHourAngle();
     setState(() {
       _connectingToClient = true;
       _status = Constants.CONNECTING;
     });
     try {
-      final connected = await _raspberryPiService.connectToClient();
+      final connected = await _raspberryPiService.connect();
       if (connected is String) {
         setState(() => _status = Constants.CONNECTED);
       } else {}
@@ -105,7 +99,7 @@ class _StatusState extends State<Status> with TickerProviderStateMixin {
   }
 
   _disconnectClient() {
-    _raspberryPiService.disconnectClient();
+    _raspberryPiService.disconnect();
     setState(() {
       _status = Constants.DISCONNECTED;
       _currentPosition = null;

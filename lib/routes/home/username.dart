@@ -45,7 +45,7 @@ class _AddAUsernameState extends State<AddAUsername> {
                 color: Colors.white,
               ),
             ),
-            SizedBox(height: 20),
+            SizedBox(height: 16),
             Form(
               child: Row(
                 children: <Widget>[

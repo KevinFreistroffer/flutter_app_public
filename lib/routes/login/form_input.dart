@@ -82,7 +82,7 @@ class _FormInputState extends State<FormInput> {
               )
             ],
           ),
-          SizedBox(height: 6),
+          SizedBox(height: 8),
           TextFormField(
             textCapitalization: TextCapitalization.none,
             // focusNode: _focusNode,

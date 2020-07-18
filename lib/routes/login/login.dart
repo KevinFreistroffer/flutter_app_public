@@ -86,7 +86,8 @@ class LoginState extends State<Login> {
   }
 
   Future<void> signInWithGoogle() async {
-    final AuthCredential authCredential = await _authService.signInWithGoogle();
+    final AuthCredential authCredential =
+        await _authService.beginSignInWithGoogle();
     final result = await _authService.signInWithCredential(authCredential);
 
     if (result is AuthResult) {
@@ -129,19 +130,24 @@ class LoginState extends State<Login> {
     _validateValues();
 
     if (_emailOrUsername.isValid() && _password.isValid()) {
-      var email, foundUser;
+      var email, findUserResponse;
       var isEmail = Constants.emailRegex.hasMatch(_emailOrUsername.value);
 
+      /**
+       * Does an account already exist with the email or username?
+       */
       if (isEmail) {
         email = _emailOrUsername.value;
+
+        findUserResponse = await _databaseService.getUserWithEmail(email);
       }
 
-      if (isEmail == false) {
-        foundUser = await _databaseService.getUserWithUsername(
+      if (!isEmail) {
+        findUserResponse = await _databaseService.getUserWithUsername(
           _emailOrUsername.value,
         );
 
-        if (foundUser == null) {
+        if (findUserResponse == null) {
           FocusScope.of(context).requestFocus(FocusNode());
           ErrorDialog.displayErrorDialog(
             context,
@@ -151,45 +157,53 @@ class LoginState extends State<Login> {
           return;
         }
 
-        email = foundUser.data['email'];
+        email = findUserResponse.data['email'];
       }
 
-      if (foundUser != null) {
-        if (foundUser.data['username'] == '' ||
-            foundUser.data['username'].isEmpty) {
+      /**
+       * If an account does exist with the email or username, check if the username is empty, and if it is
+       * than, the account was created with Google and only contains an email address, and proceed to display the sign
+       * into an existing Google account dialog.
+       */
+      if (findUserResponse != null) {
+        print('a user was found. $findUserResponse');
+        // Sign into your existing Google account?
+        if (findUserResponse.data['username'] == '' ||
+            findUserResponse.data['username'].isEmpty) {
           _displaySignIntoExistingGoogleAccountDialog();
           return;
-        } else {
-          final authResult = await _authService.signInWithEmailAndPassword(
-            email: email,
-            password: _password.value,
+        }
+
+        // The account was created with an email and password and not Google
+        final authResult = await _authService.signInWithEmailAndPassword(
+          email: email,
+          password: _password.value,
+        );
+
+        // success
+        if (authResult is AuthResult) {
+          _loadingService.add(isOpen: true);
+          _userModel.set(uid: authResult.user.uid);
+
+          _userModel.set(
+            email: findUserResponse.data['email'],
+            username: findUserResponse.data['username'],
+            nickname: findUserResponse.data['nickname'],
+            phoneNumber: findUserResponse.data['phoneNumber'],
+            platform: findUserResponse.data['platform'],
           );
 
-          // success
-          if (authResult is AuthResult) {
-            _loadingService.add(isOpen: true);
-            _userModel.set(uid: authResult.user.uid);
-
-            _userModel.set(
-              email: foundUser.data['email'],
-              username: foundUser.data['username'],
-              nickname: foundUser.data['nickname'],
-              phoneNumber: foundUser.data['phoneNumber'],
-              platform: foundUser.data['platform'],
-            );
-
-            setState(() => _submitting = false);
-            Navigator.pushNamedAndRemoveUntil(
-              context,
-              '/dashboard',
-              (route) => false,
-            );
-          } else {
-            // error
-            _loadingService.add(isOpen: false);
-            ErrorDialog.displayErrorDialog(context, authResult);
-            setState(() => _submitting = false);
-          }
+          setState(() => _submitting = false);
+          Navigator.pushNamedAndRemoveUntil(
+            context,
+            '/dashboard',
+            (route) => false,
+          );
+        } else {
+          // error
+          _loadingService.add(isOpen: false);
+          ErrorDialog.displayErrorDialog(context, authResult);
+          setState(() => _submitting = false);
         }
       }
     } else {
@@ -200,7 +214,7 @@ class LoginState extends State<Login> {
   Future<void> _handleSignIntoExistingGoogleAccountAnswer(bool yes) async {
     if (yes) {
       final AuthCredential authCredential =
-          await _authService.signInWithGoogle();
+          await _authService.beginSignInWithGoogle();
       final authResult =
           await _authService.signInWithCredential(authCredential);
       if (authResult is AuthResult) {
@@ -289,7 +303,7 @@ class LoginState extends State<Login> {
                     height: 1.5,
                   ),
                 ),
-                SizedBox(height: 18.5),
+                SizedBox(height: 16),
                 Text(
                   'Would you like to sign in with your Google account?',
                   style: TextStyle(
@@ -376,7 +390,7 @@ class LoginState extends State<Login> {
                           style: TextStyle(color: theme.onBackground),
                         ),
                         iconTheme: IconThemeData(
-                          color: theme.onBackground.withOpacity(0.25),
+                          color: theme.onBackground.withOpacity(0.5),
                         ),
                         backgroundColor: theme.primary,
                       ),
@@ -385,7 +399,7 @@ class LoginState extends State<Login> {
                     size.width * .1,
                     size.width * .125,
                     size.width * .1,
-                    size.width * .125,
+                    0,
                   ),
                   color: theme.background,
                   height: size.height,
@@ -393,102 +407,108 @@ class LoginState extends State<Login> {
                     child: OrientationBuilder(
                       builder: (context, orientation) {
                         return SingleChildScrollView(
-                          child: Stack(
-                            children: <Widget>[
-                              Visibility(
-                                visible: !_showLoadingScreen &&
-                                    _currentStep ==
-                                        Constants
-                                            .SIGNIN_STEP_EMAIL_OR_USERNAME_AND_PASSWORD,
-                                maintainState: true,
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  crossAxisAlignment: CrossAxisAlignment.center,
-                                  children: [
-                                    LoginForm(
-                                      formKey: _formKey,
-                                      formIsValid: _formIsValid,
-                                      formControls: [
-                                        _emailOrUsername,
-                                        _password
-                                      ],
-                                      signInWithCredentials:
-                                          _handleFormSubmission,
-                                      signInWithGoogle: signInWithGoogle,
-                                      orientation: orientation,
-                                      size: size,
-                                      isSendingRequest: _submitting,
-                                    ),
-                                    SizedBox(height: 16),
-                                    Row(
-                                      mainAxisAlignment: MainAxisAlignment.end,
-                                      children: <Widget>[
-                                        GestureDetector(
-                                          onTap: () {
-                                            Navigator.pushNamed(
-                                                context, '/password-reset');
-                                          },
-                                          child: Text(
-                                            'Forgot password?',
-                                            style: TextStyle(
-                                              color: theme.primaryVariant,
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    SizedBox(height: 37),
-                                    Row(
-                                      children: <Widget>[
-                                        Expanded(
-                                          child: SubmitButton(
-                                            text: 'Next',
-                                            isSubmitting: _submitting,
-                                            formIsValid: _formIsValid,
-                                            handleOnSubmit:
-                                                _handleFormSubmission,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    SizedBox(height: 18.5),
-                                    Row(
-                                      children: <Widget>[
-                                        Expanded(
-                                          child: RaisedButton.icon(
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(5),
-                                            ),
-                                            padding: EdgeInsets.fromLTRB(
-                                                10, 15, 10, 15),
-                                            // shape: RoundedRectangleBorder(
-                                            //     borderRadius:
-                                            //         BorderRadius.circular(100.0)),
-                                            color: theme.primaryVariant,
-                                            icon: Icon(Icons.phone_android,
-                                                color: Colors.white
-                                                    .withOpacity(0.8)),
-                                            onPressed: () =>
-                                                Navigator.pushNamed(
-                                              context,
-                                              '/verify-phone',
-                                            ),
-                                            label: Text(
-                                              'Login With Your Phone',
+                          child: Padding(
+                            padding: EdgeInsets.only(bottom: size.width * .125),
+                            child: Stack(
+                              children: <Widget>[
+                                Visibility(
+                                  visible: !_showLoadingScreen &&
+                                      _currentStep ==
+                                          Constants
+                                              .SIGNIN_STEP_EMAIL_OR_USERNAME_AND_PASSWORD,
+                                  maintainState: true,
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.center,
+                                    children: [
+                                      LoginForm(
+                                        formKey: _formKey,
+                                        formIsValid: _formIsValid,
+                                        formControls: [
+                                          _emailOrUsername,
+                                          _password
+                                        ],
+                                        signInWithCredentials:
+                                            _handleFormSubmission,
+                                        signInWithGoogle: signInWithGoogle,
+                                        orientation: orientation,
+                                        size: size,
+                                        isSendingRequest: _submitting,
+                                      ),
+                                      SizedBox(height: 16),
+                                      Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.end,
+                                        children: <Widget>[
+                                          GestureDetector(
+                                            onTap: () {
+                                              Navigator.pushNamed(
+                                                  context, '/password-reset');
+                                            },
+                                            child: Text(
+                                              'Forgot password?',
                                               style: TextStyle(
-                                                color: Colors.white
-                                                    .withOpacity(0.8),
+                                                color: theme.primaryVariant,
                                               ),
                                             ),
                                           ),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
+                                        ],
+                                      ),
+                                      SizedBox(height: 32),
+                                      Row(
+                                        children: <Widget>[
+                                          Expanded(
+                                            child: SubmitButton(
+                                              text: 'Next',
+                                              isSubmitting: _submitting,
+                                              formIsValid: _formIsValid,
+                                              handleOnSubmit:
+                                                  _handleFormSubmission,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      SizedBox(height: 16),
+                                      Row(
+                                        children: <Widget>[
+                                          Expanded(
+                                            child: RaisedButton.icon(
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(5),
+                                              ),
+                                              padding: EdgeInsets.fromLTRB(
+                                                  10, 15, 10, 15),
+                                              // shape: RoundedRectangleBorder(
+                                              //     borderRadius:
+                                              //         BorderRadius.circular(100.0)),
+                                              color: theme.primaryVariant,
+                                              icon: Icon(Icons.phone_android,
+                                                  color: theme.onPrimaryVariant
+                                                      .withOpacity(0.8)),
+                                              onPressed: () =>
+                                                  Navigator.pushNamed(
+                                                context,
+                                                '/verify-phone',
+                                              ),
+                                              label: Text(
+                                                'Login With Your Phone',
+                                                style: TextStyle(
+                                                  fontSize: 16,
+                                                  color: theme.onPrimaryVariant
+                                                      .withOpacity(0.8),
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
                         );
                       },

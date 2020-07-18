@@ -93,7 +93,7 @@ class _AnimatedScreentState extends State<AnimatedScreen> {
                       height: 1.25,
                     ),
                   ),
-                  SizedBox(height: 30),
+                  SizedBox(height: 32),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: <Widget>[

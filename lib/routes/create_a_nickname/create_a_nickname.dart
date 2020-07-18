@@ -194,7 +194,7 @@ class _CreateANicknameState extends State<CreateANickname> {
                                     color: theme.onBackground,
                                   ),
                                 ),
-                                SizedBox(height: 9.25),
+                                SizedBox(height: 8),
                                 Text(
                                   'Let\s start by adding a nickname',
                                   style: TextStyle(
@@ -202,7 +202,7 @@ class _CreateANicknameState extends State<CreateANickname> {
                                     color: theme.onBackground,
                                   ),
                                 ),
-                                SizedBox(height: 18.5),
+                                SizedBox(height: 16),
                                 new Theme(
                                   data: theme.themeData,
                                   child: TextFormField(
@@ -216,7 +216,7 @@ class _CreateANicknameState extends State<CreateANickname> {
                                     onChanged: _handleNicknameValueOnChange,
                                   ),
                                 ),
-                                SizedBox(height: 37),
+                                SizedBox(height: 32),
                                 SubmitButton(
                                   text: 'Next',
                                   formIsValid: _error == null,
@@ -241,7 +241,7 @@ class _CreateANicknameState extends State<CreateANickname> {
                               'All set',
                               style: TextStyle(fontSize: 50.0),
                             ),
-                            SizedBox(height: 18.5),
+                            SizedBox(height: 16),
                             Text(
                               _nickname,
                               style: TextStyle(fontSize: 50.0),

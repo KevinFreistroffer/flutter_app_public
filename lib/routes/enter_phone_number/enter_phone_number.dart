@@ -184,7 +184,7 @@ class _EnterPhoneNumberState extends State<EnterPhoneNumber> {
                               color: theme.onBackground,
                             ),
                           ),
-                          SizedBox(height: 20),
+                          SizedBox(height: 16),
                           TextField(
                             decoration: InputDecoration(
                               labelText: 'Phone number',
@@ -202,12 +202,12 @@ class _EnterPhoneNumberState extends State<EnterPhoneNumber> {
                             onChanged: _handleFormInputOnChange,
                             keyboardType: TextInputType.number,
                           ),
-                          SizedBox(height: 20),
+                          SizedBox(height: 16),
                           Text(
                               'if you use your phone number, you might receive an SMS message for verification and standard rates apply.',
                               style: TextStyle(
                                   color: theme.onBackground.withOpacity(0.75))),
-                          SizedBox(height: 20),
+                          SizedBox(height: 16),
                           Container(
                             width: size.width,
                             constraints: BoxConstraints(
@@ -231,7 +231,7 @@ class _EnterPhoneNumberState extends State<EnterPhoneNumber> {
                               },
                             ),
                           ),
-                          SizedBox(height: 20),
+                          SizedBox(height: 16),
                           Container(
                             //width: 150,
                             child: GestureDetector(

@@ -306,7 +306,7 @@ class _VerifyPhoneState extends State<VerifyPhone> {
                                                   fontSize: 25,
                                                   color: theme.onBackground),
                                             ),
-                                            SizedBox(height: 7.5),
+                                            SizedBox(height: 8),
                                             TextFormField(
                                               decoration: InputDecoration(
                                                 labelText: 'Phone number',
@@ -330,7 +330,7 @@ class _VerifyPhoneState extends State<VerifyPhone> {
                                               keyboardType:
                                                   TextInputType.number,
                                             ),
-                                            SizedBox(height: 20),
+                                            SizedBox(height: 16),
                                             Text(
                                               'if you use your phone number, you might receive an SMS message for verification and standard rates apply.',
                                               style: TextStyle(
@@ -338,7 +338,7 @@ class _VerifyPhoneState extends State<VerifyPhone> {
                                                     .withOpacity(0.75),
                                               ),
                                             ),
-                                            SizedBox(height: 20),
+                                            SizedBox(height: 16),
                                             Row(
                                               children: <Widget>[
                                                 Expanded(
@@ -440,13 +440,13 @@ class _VerifyPhoneState extends State<VerifyPhone> {
                                       'Please enter the SMS Code Sent To Your Phone',
                                       style: TextStyle(fontSize: 35.0),
                                     ),
-                                    SizedBox(height: 20),
+                                    SizedBox(height: 16),
                                     Text(
                                         'To make sure this number is yours, we will send you a text message with a 6-digit verification code. Standard rates apply',
                                         style: TextStyle(
                                           fontSize: 20,
                                         )),
-                                    SizedBox(height: 20),
+                                    SizedBox(height: 16),
                                     Form(
                                       //key: _store.phoneNumberFormKey,
                                       child: Column(
@@ -474,7 +474,7 @@ class _VerifyPhoneState extends State<VerifyPhone> {
                                             keyboardType: TextInputType.number,
                                             maxLength: 6,
                                           ),
-                                          SizedBox(height: 20),
+                                          SizedBox(height: 16),
                                           SubmitButton(
                                             text: 'Next',
                                             handleOnSubmit: _handleSubmit,
@@ -482,7 +482,7 @@ class _VerifyPhoneState extends State<VerifyPhone> {
                                             formIsValid:
                                                 _errors['phone'] == null,
                                           ),
-                                          SizedBox(height: 18.5),
+                                          SizedBox(height: 16),
                                           Row(
                                             children: <Widget>[
                                               Expanded(

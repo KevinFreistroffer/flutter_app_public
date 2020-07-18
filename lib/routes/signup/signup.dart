@@ -367,8 +367,7 @@ class SignUpState extends State<SignUp> {
   }
 
   Future<List> _emailAndUsernameAreUnique() async {
-    final emailSnapshot =
-        await _databaseService.findUserWithEmail(_email.value);
+    final emailSnapshot = await _databaseService.getUserWithEmail(_email.value);
     final usernameSnapshot =
         await _databaseService.getUserWithUsername(_username.value);
 
@@ -378,7 +377,7 @@ class SignUpState extends State<SignUp> {
   Future<void> _handleSignIntoExistingGoogleAccountAnswer(bool yes) async {
     if (yes) {
       final AuthCredential authCredential =
-          await _authService.signInWithGoogle();
+          await _authService.beginSignInWithGoogle();
       final response = await _authService.signInWithCredential(authCredential);
       if (response is AuthResult) {
         setState(() => _submitting = false);
@@ -512,7 +511,7 @@ class SignUpState extends State<SignUp> {
                     height: 1.5,
                   ),
                 ),
-                SizedBox(height: 18.5),
+                SizedBox(height: 16),
                 Text(
                   'Would you like to sign in with your Google account?',
                   style: TextStyle(

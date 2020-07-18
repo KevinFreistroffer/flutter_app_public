@@ -25,7 +25,7 @@ class AppTheme {
 
   ThemeData get themeData {
     TextTheme textTheme =
-        GoogleFonts.aBeeZeeTextTheme(Theme.of(context).textTheme);
+        GoogleFonts.openSansTextTheme(Theme.of(context).textTheme);
     Color textColor = textTheme.bodyText1.color;
     ColorScheme colorScheme = ColorScheme(
       brightness: isDark ? Brightness.dark : Brightness.light,
@@ -49,7 +49,7 @@ class AppTheme {
     ).copyWith(
       buttonTheme: ButtonThemeData(
         buttonColor: secondary,
-        textTheme: ButtonTextTheme.primary,
+        textTheme: ButtonTextTheme.normal,
         disabledColor: Colors.white,
         //buttonColor: Color.fromRGBO(193, 92, 55, 1),
         padding: EdgeInsets.fromLTRB(0, 17, 0, 17),
@@ -58,6 +58,7 @@ class AppTheme {
               onSecondary: Colors.white,
               onBackground: Colors.white,
               onSurface: Colors.white,
+              secondary: Colors.white,
             ),
       ),
       cursorColor: primaryVariant,
@@ -71,7 +72,7 @@ class AppTheme {
           ),
         ),
         iconTheme: IconThemeData(
-          color: onPrimary.withOpacity(0.25),
+          color: onPrimary.withOpacity(0.45),
         ),
       ),
       highlightColor: accent1,

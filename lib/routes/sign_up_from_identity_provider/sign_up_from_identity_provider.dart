@@ -84,7 +84,7 @@ class _SignUpFromIdentityProviderState
                         Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: <Widget>[
-                            SizedBox(height: 30),
+                            SizedBox(height: 32),
                             Visibility(
                               visible: snapshot.data == Constants.GOOGLE,
                               child: Column(
@@ -183,7 +183,7 @@ class _SignUpFromIdentityProviderState
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: <Widget>[
-                              SizedBox(height: 30),
+                              SizedBox(height: 32),
                               Text('Create a password'),
                               Text('Confirm the password'),
                               SubmitButton(

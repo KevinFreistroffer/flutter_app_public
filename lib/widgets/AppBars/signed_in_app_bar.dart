@@ -76,54 +76,55 @@ class _SignedInAppBarState extends State<SignedInAppBar> {
           actions: <Widget>[
             Container(
               child: PopupMenuButton(
-                  color: theme.surface,
-                  icon: Icon(
-                    Icons.more_vert,
-                    color: theme.onBackground,
-                  ),
-                  onSelected: (result) async {
-                    switch (result) {
-                      case ACCOUNT:
-                        Navigator.pushNamed(context, '/account');
-                        break;
-                      case Constants.SIGN_OUT:
-                        _loadingService.add(isOpen: true, isSigningOut: true);
-                        userModel.emptyAllValues();
-                        _authService.signOut();
-                        await wait(s: 2);
-                        _loadingService.add(isOpen: false);
-                        Navigator.pushNamed(context, '/');
-                        break;
+                color: theme.surface,
+                icon: Icon(
+                  Icons.more_vert,
+                  color: theme.onBackground,
+                ),
+                onSelected: (result) async {
+                  switch (result) {
+                    case ACCOUNT:
+                      Navigator.pushNamed(context, '/account');
+                      break;
+                    case Constants.SIGN_OUT:
+                      _loadingService.add(isOpen: true, isSigningOut: true);
+                      userModel.emptyAllValues();
+                      _authService.signOut();
+                      await wait(s: 2);
+                      _loadingService.add(isOpen: false);
+                      Navigator.pushNamed(context, '/');
+                      break;
 
-                      default:
-                        break;
-                    }
-                  },
-                  itemBuilder: (BuildContext context) {
-                    return <PopupMenuEntry>[
-                      // Should be a for loop
+                    default:
+                      break;
+                  }
+                },
+                itemBuilder: (BuildContext context) {
+                  return <PopupMenuEntry>[
+                    // Should be a for loop
 
-                      for (final item in menuItems)
-                        PopupMenuItem(
-                          value: item.value,
-                          child: Text(
-                            item.text,
-                            style: TextStyle(color: theme.primary),
-                          ),
-                        ),
-
+                    for (final item in menuItems)
                       PopupMenuItem(
-                        height: 50,
-                        value: Constants.SIGN_OUT,
-                        child: Text('SIGN OUT'),
-                        textStyle: TextStyle(
-                          color: Colors.black87,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w400,
+                        value: item.value,
+                        child: Text(
+                          item.text,
+                          style: TextStyle(color: theme.primary),
                         ),
                       ),
-                    ];
-                  }),
+
+                    PopupMenuItem(
+                      height: 50,
+                      value: Constants.SIGN_OUT,
+                      child: Text('SIGN OUT'),
+                      textStyle: TextStyle(
+                        color: Colors.black87,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w400,
+                      ),
+                    ),
+                  ];
+                },
+              ),
             ),
           ],
         );

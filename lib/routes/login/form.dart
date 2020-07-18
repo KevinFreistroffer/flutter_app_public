@@ -57,7 +57,7 @@ class LoginForm extends StatelessWidget {
             },
             error: _emailOrUsername.error,
           ),
-          SizedBox(height: 25),
+          SizedBox(height: 32),
           FormInput(
             value: _password.value,
             autofocus: false,

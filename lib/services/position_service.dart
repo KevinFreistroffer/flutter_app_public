@@ -6,9 +6,17 @@ class PositionService {
   double longitude;
 
   Future<Position> getCurrentPosition() async {
-    final Geolocator geolocator = Geolocator()..forceAndroidLocationManager;
-    return geolocator.getCurrentPosition(
-      desiredAccuracy: LocationAccuracy.high,
-    );
+    Position position;
+
+    try {
+      Geolocator geolocator = Geolocator()..forceAndroidLocationManager = true;
+      position = await geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
+    } catch (error) {
+      print('An error occurred in geolocator.getCurrentPosition $error');
+    }
+
+    return position;
   }
 }
