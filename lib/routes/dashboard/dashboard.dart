@@ -198,7 +198,11 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
   // }
 
   Future<void> _startScript() async {
-    String scriptResponse = await _raspberryPiService.startScript();
+    Position position = await _positionService.getCurrentPosition();
+    String scriptResponse = await _raspberryPiService.startScript(
+      latitude: position.latitude,
+      longitude: position.longitude,
+    );
     print('scriptResponse $scriptResponse');
     // try {
     //   //SSHClient client = _raspberryPiService.getClient();

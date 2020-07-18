@@ -23,14 +23,17 @@ class RaspberryPiService {
   }
 
   Future<void> exitTheScript() async {
+    // await client.execute(
+    //   'cd ${Constants.PI_SCRIPT_DIRECTORY}; python3 -c \'import script; script.exitScript()',
+    // );
     await client.execute(
-      'cd ${Constants.PI_SCRIPT_DIRECTORY}; ls\n; python3 -c\'import python.py; python.exitScript()',
+      'cd ${Constants.PI_SCRIPT_DIRECTORY}; pkill -f script.py',
     );
   }
 
-  Future<String> startScript() async {
+  Future<String> startScript({double latitude, double longitude}) async {
     var startScriptResponse = await client.execute(
-      'cd ${Constants.PI_SCRIPT_DIRECTORY}; ls\n; sudo python3 python.py',
+      'cd ${Constants.PI_SCRIPT_DIRECTORY}; ./python.sh latitude=$latitude longitude=$longitude',
     );
 
     print('startScriptResponse $startScriptResponse');
