@@ -2,27 +2,28 @@ import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_redux/flutter_redux.dart';
+import 'package:redux/redux.dart';
+import './reducers/root_reducer.dart';
 import './services/authentication.service.dart';
 import './services/user.service.dart';
 import './services/storage.service.dart';
 import 'App.dart';
-import './constants.dart';
+import './models/position.dart';
+import './models/app_state.dart';
 import './state/user_model.dart';
 import './state/coordinates_model.dart';
 import './state/times_model.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-  final AuthenticationService _authService = AuthenticationService();
+  final store = Store<AppState>(
+    rootReducer,
+    initialState: AppState(),
+  );
   final StorageService _storageService = StorageService();
-  final UserService _userService = UserService();
 
-  // to test each restart
-  _authService.signOut();
-  _storageService.removeAll();
-
-  final _prefs = SharedPreferences.getInstance().then((prefs) async {
+  SharedPreferences.getInstance().then((prefs) async {
     var phoneVerificationInProgress = prefs.get('phoneVerificationInProgress');
     var forceResendingToken = prefs.get('forceResendingToken');
 
@@ -55,7 +56,7 @@ void main() async {
             create: (context) => TimesModel(),
           ),
         ],
-        child: App('/'),
+        child: App('/', store),
       ),
     );
   }).catchError((error) {
@@ -74,7 +75,7 @@ void main() async {
             create: (context) => TimesModel(),
           ),
         ],
-        child: App('/'),
+        child: App('/', store),
       ),
     );
   });

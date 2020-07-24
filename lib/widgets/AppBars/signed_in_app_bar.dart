@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../../services/loading.service.dart';
 import '../../services/storage.service.dart';
 import '../../services/authentication.service.dart';
@@ -63,12 +64,14 @@ class _SignedInAppBarState extends State<SignedInAppBar> {
     return Consumer<UserModel>(
       builder: (context, value, child) {
         return AppBar(
-          backgroundColor: widget.backgroundColor,
+          backgroundColor: Colors.white,
+          //backgroundColor: widget.backgroundColor,
           automaticallyImplyLeading: widget.automaticallyImplyLeading,
           title: Text(
             widget.title,
-            style: TextStyle(
-              color: theme.onBackground,
+            style: GoogleFonts.notoSans(
+              color: Colors.black,
+              fontWeight: FontWeight.bold,
             ),
           ),
           bottom: widget.bottom ?? null,
@@ -79,7 +82,7 @@ class _SignedInAppBarState extends State<SignedInAppBar> {
                 color: theme.surface,
                 icon: Icon(
                   Icons.more_vert,
-                  color: theme.onBackground,
+                  color: Colors.black,
                 ),
                 onSelected: (result) async {
                   switch (result) {

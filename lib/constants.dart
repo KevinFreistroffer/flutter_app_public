@@ -97,13 +97,17 @@ class Constants {
     'forceResendingToken'
   ];
 
-  static const String CONNECT = 'Connect';
-  static const String CONNECTED = 'Connected';
-  static const String CONNECTING = 'Connecting';
-  static const String DISCONNECT = 'Disconnect';
-  static const String DISCONNECTED = 'Disconnected';
+  static const String SSH_CONNECT = 'Connect';
+  static const String SSH_CONNECTED = 'Connected';
+  static const String SSH_CONNECTING = 'Connecting';
+  static const String SSH_DISCONNECT = 'Disconnect';
+  static const String SSH_DISCONNECTED = 'Disconnected';
   static const String LOCATION_NOT_AVAILABLE = 'N/A';
   static const String SSH_CONNECT_SUCCESS = 'session_connected';
+
+  static const String SCRIPT_RUNNING = 'Script Running';
+  static const String SCRIPT_NOT_RUNNING = 'Script Not Running';
+  static const String SCRIPT_COMPLETED = 'COMPLETED';
 
   static const String PI_SCRIPT_DIRECTORY =
       '/home/pi/.local/share/applications';

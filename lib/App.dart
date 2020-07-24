@@ -1,15 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter_redux/flutter_redux.dart';
+import 'package:redux/redux.dart';
 
 import 'routes/home/home.dart';
 import 'routes/login/login.dart';
 import 'routes/signup/signup.dart';
 import 'routes/sign_up_from_identity_provider/sign_up_from_identity_provider.dart';
-import 'routes/list_of_consumables/list.dart';
 //import 'routes/make_a_meal/index.dart';
-import 'routes/consumed/consumed.dart';
-import 'routes/totals/totals.dart';
-import 'routes/macros.dart';
 import 'routes/dashboard/dashboard.dart';
 import 'routes/status/status.dart';
 import 'routes/create_a_nickname/create_a_nickname.dart';
@@ -19,13 +18,13 @@ import 'routes/enter_sms_code/enter_sms_code.dart';
 import 'routes/animated_screen/animated_screen.dart';
 import 'routes/password_reset/password_reset.dart';
 import 'routes/verify_phone/verify_phone.dart';
+import './models/app_state.dart';
 import './theme.dart';
-import 'services/loading.service.dart';
 
 class App extends StatelessWidget {
-  final LoadingService _loadingService = LoadingService();
   final String initialRoute;
-  App(this.initialRoute);
+  final Store store;
+  App(this.initialRoute, this.store);
 
   @override
   Widget build(BuildContext context) {
@@ -83,33 +82,34 @@ class App extends StatelessWidget {
       ..onSurface = Colors.red
       ..onError = Colors.white;
 
-    return Provider.value(
-      value: appTheme,
-      child: MaterialApp(
-        initialRoute: initialRoute,
-        routes: {
-          '/': (BuildContext context) => Home(),
-          '/login': (BuildContext context) => Login(),
-          '/verify-phone': (BuildContext context) => VerifyPhone(),
-          '/enter-phone-number': (BuildContext context) => EnterPhoneNumber(),
-          '/enter-sms-code': (BuildContext context) => EnterSMSCode(),
-          '/signup': (BuildContext context) => SignUp(),
-          '/signup-from-identity-provider': (BuildContext context) =>
-              SignUpFromIdentityProvider(),
-          '/list': (BuildContext context) => ListOfConsumables(),
-          '/consumed': (BuildContext context) => Consumed(),
-          '/totals': (BuildContext context) => Totals(),
-          '/macros': (BuildContext context) => Macros(),
-          '/dashboard': (BuildContext context) => Dashboard(),
-          '/status': (BuildContext context) => Status(),
-          '/create-a-nickname': (BuildContext context) => CreateANickname(),
-          '/account': (BuildContext context) => Account(),
-          '/password-reset': (BuildContext context) => PasswordReset(),
-          '/animated-screen': (BuildContext context) => AnimatedScreen(),
-          //'/make-a-meal': (BuildContext context) => MakeAMeal(),
-          //'/todos': (BuildContext context) => GoDo(),
-        },
-        theme: appTheme.themeData,
+    return StoreProvider<AppState>(
+      store: store,
+      child: Provider.value(
+        value: appTheme,
+        child: MaterialApp(
+          initialRoute: initialRoute,
+          routes: {
+            '/': (BuildContext context) => Home(),
+            '/login': (BuildContext context) => Login(),
+            '/verify-phone': (BuildContext context) => VerifyPhone(),
+            '/enter-phone-number': (BuildContext context) => EnterPhoneNumber(),
+            '/enter-sms-code': (BuildContext context) => EnterSMSCode(),
+            '/signup': (BuildContext context) => SignUp(),
+            '/signup-from-identity-provider': (BuildContext context) =>
+                SignUpFromIdentityProvider(),
+            '/dashboard': (BuildContext context) => Dashboard(),
+            '/status': (BuildContext context) => Status(),
+            '/create-a-nickname': (BuildContext context) => CreateANickname(),
+            '/account': (BuildContext context) => Account(),
+            '/password-reset': (BuildContext context) => PasswordReset(),
+            '/animated-screen': (BuildContext context) => AnimatedScreen(),
+          },
+          theme: ThemeData(
+            textTheme: GoogleFonts.notoSansTextTheme(
+              Theme.of(context).textTheme,
+            ),
+          ),
+        ),
       ),
     );
   }

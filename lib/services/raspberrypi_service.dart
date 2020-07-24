@@ -23,28 +23,42 @@ class RaspberryPiService {
   }
 
   Future<void> exitTheScript() async {
-    // await client.execute(
-    //   'cd ${Constants.PI_SCRIPT_DIRECTORY}; python3 -c \'import script; script.exitScript()',
-    // );
+    print('RaspberryPiService exitTheScript()');
+
     await client.execute(
       'cd ${Constants.PI_SCRIPT_DIRECTORY}; pkill -f script.py',
     );
   }
 
-  Future<String> startScript({double latitude, double longitude}) async {
-    var startScriptResponse = await client.execute(
-      'cd ${Constants.PI_SCRIPT_DIRECTORY}; ./python.sh latitude=$latitude longitude=$longitude',
+  Future<void> reboot() async {
+    await client.execute(
+      'cd ${Constants.PI_SCRIPT_DIRECTORY}; sudo reboot',
     );
+  }
 
-    print('startScriptResponse $startScriptResponse');
-
-    return startScriptResponse;
+  Future<String> startScript({
+    // double latitude,
+    // double longitude,
+    // dynamic sunrise,
+    // dynamic sunset,
+    // int differenceInMinutes,
+    int twilightDuration,
+    int minutesSinceSunrise,
+  }) async {
+    return await client.execute(
+      'cd ${Constants.PI_SCRIPT_DIRECTORY} && python3 script.py --twilightDuration $twilightDuration --minutesSinceSunrise 240',
+    );
   }
 
   Future<void> createWPASupplicantFileWithNetworkDetails(
       String ssid, String psk) async {
-    await client.execute(
-      'cd /etc; printf "network={\n\tssid=\"$ssid\"\n\tpsk=\"psk\"\n\tpriority=1\n}" wpa_supplicant',
-    );
+    try {
+      await client.execute(
+        'cd /etc; printf "network={\n\tssid=\"$ssid\"\n\tpsk=\"psk\"\n\tpriority=1\n}" wpa_supplicant',
+      );
+    } catch (error) {
+      print(
+          'An error occurred in createWPASupplicantFileWithNetworkDetails $error');
+    }
   }
 }

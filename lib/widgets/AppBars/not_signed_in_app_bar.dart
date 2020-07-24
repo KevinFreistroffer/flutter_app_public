@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../../services/loading.service.dart';
 import '../../services/storage.service.dart';
 import '../../services/authentication.service.dart';
@@ -39,7 +40,7 @@ class _NotSignedInAppBarState extends State<NotSignedInAppBar> {
     AppBar(
       backgroundColor: theme.primary,
       automaticallyImplyLeading: widget.automaticallyImplyLeading,
-      title: Text(widget.title),
+      title: Text(widget.title, style: GoogleFonts.notoSans()),
       elevation: widget.elevation ?? null,
       actions: null,
     );

@@ -24,9 +24,10 @@ class AppTheme {
   AppTheme({@required this.isDark, @required this.context});
 
   ThemeData get themeData {
+    // TextTheme textTheme =
+    //     GoogleFonts.openSansTextTheme(Theme.of(context).textTheme);
     TextTheme textTheme =
-        GoogleFonts.openSansTextTheme(Theme.of(context).textTheme);
-    Color textColor = textTheme.bodyText1.color;
+        GoogleFonts.notoSansTextTheme(Theme.of(context).textTheme);
     ColorScheme colorScheme = ColorScheme(
       brightness: isDark ? Brightness.dark : Brightness.light,
       primary: primary,
@@ -64,7 +65,7 @@ class AppTheme {
       cursorColor: primaryVariant,
       appBarTheme: AppBarTheme(
         textTheme: TextTheme(
-          headline6: GoogleFonts.aBeeZee(
+          headline6: GoogleFonts.notoSans(
             textStyle: TextStyle(
               fontSize: 20.0,
               color: onPrimary.withOpacity(0.95),

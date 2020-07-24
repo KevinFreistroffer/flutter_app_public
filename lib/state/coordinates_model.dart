@@ -1,7 +1,7 @@
 import 'dart:collection';
 
 import 'package:flutter/material.dart';
-import 'package:geolocator/geolocator.dart';
+import 'package:geocoder/geocoder.dart';
 
 class CoordinatesModel extends ChangeNotifier {
   double _latitude;

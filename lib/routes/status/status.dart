@@ -52,7 +52,7 @@ class _StatusState extends State<Status> with TickerProviderStateMixin {
   String _username = '';
   String _pythonResponse = '';
   String _location = Constants.LOCATION_NOT_AVAILABLE;
-  String _status = Constants.DISCONNECTED;
+  String _sshStatus = Constants.SSH_DISCONNECTED;
 
   int _currentPage = 0;
   bool displayDashboardContent = false;
@@ -80,18 +80,18 @@ class _StatusState extends State<Status> with TickerProviderStateMixin {
   Future<void> _sshToRaspberryPi() async {
     setState(() {
       _connectingToClient = true;
-      _status = Constants.CONNECTING;
+      _sshStatus = Constants.SSH_CONNECTING;
     });
     try {
       final connected = await _raspberryPiService.connect();
       if (connected is String) {
-        setState(() => _status = Constants.CONNECTED);
+        setState(() => _sshStatus = Constants.SSH_CONNECTED);
       } else {}
     } catch (error) {
       print('An error occurred connecting to the client $error');
       // displayErrorDialog();
       setState(() {
-        _status = Constants.DISCONNECTED;
+        _sshStatus = Constants.SSH_DISCONNECTED;
       });
     }
 
@@ -101,7 +101,7 @@ class _StatusState extends State<Status> with TickerProviderStateMixin {
   _disconnectClient() {
     _raspberryPiService.disconnect();
     setState(() {
-      _status = Constants.DISCONNECTED;
+      _sshStatus = Constants.SSH_DISCONNECTED;
       _currentPosition = null;
     });
   }
@@ -296,15 +296,15 @@ class _StatusState extends State<Status> with TickerProviderStateMixin {
                                     GestureDetector(
                                       onTap: () async {
                                         print(
-                                            'Status onTap() $_status $_connectingToClient');
+                                            'Status onTap() $_sshStatus $_connectingToClient');
                                         if (_connectingToClient) {
                                           return null;
-                                        } else if (_status ==
-                                            Constants.DISCONNECTED) {
+                                        } else if (_sshStatus ==
+                                            Constants.SSH_DISCONNECTED) {
                                           _sshToRaspberryPi();
                                         } else {
                                           print(
-                                              '_status is Connected, calling _disconnectClient()');
+                                              '_sshStatus is Connected, calling _disconnectClient()');
                                           _disconnectClient();
                                         }
                                       },
@@ -347,7 +347,7 @@ class _StatusState extends State<Status> with TickerProviderStateMixin {
                                                 height: 60,
                                                 //color: Colors.green,
                                                 child: Text(
-                                                  _status,
+                                                  _sshStatus,
                                                   style: TextStyle(
                                                     color: Colors.black54,
                                                   ),
@@ -371,8 +371,9 @@ class _StatusState extends State<Status> with TickerProviderStateMixin {
                                       },
                                       child: AnimatedOpacity(
                                         duration: Duration(milliseconds: 215),
-                                        opacity: (_status ==
-                                                    Constants.DISCONNECTED &&
+                                        opacity: (_sshStatus ==
+                                                    Constants
+                                                        .SSH_DISCONNECTED &&
                                                 _currentPosition == null)
                                             ? 0.15
                                             : 1,
@@ -501,7 +502,7 @@ class _StatusState extends State<Status> with TickerProviderStateMixin {
                                                   height: 60,
                                                   //color: Colors.green,
                                                   child: Text(
-                                                    _status,
+                                                    _sshStatus,
                                                     style: TextStyle(
                                                       color: Colors.black54,
                                                     ),

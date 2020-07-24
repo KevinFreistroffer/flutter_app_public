@@ -148,8 +148,8 @@ class Tracking extends StatelessWidget {
             ),
             AnimatedOpacity(
               duration: Duration(milliseconds: 215),
-              opacity: status == Constants.DISCONNECTED ||
-                      status == Constants.CONNECTING
+              opacity: status == Constants.SSH_DISCONNECTED ||
+                      status == Constants.SSH_CONNECTING
                   ? 0.5
                   : 1,
               child: Column(

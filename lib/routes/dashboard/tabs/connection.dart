@@ -16,7 +16,8 @@ class Connection extends StatelessWidget {
   final Function disconnect;
   final Function executeShellCommand;
   final Function exitScript;
-  final String status;
+  final String sshStatus;
+  final String locationStatus;
   final dynamic error;
   Connection({
     Key key,
@@ -25,7 +26,8 @@ class Connection extends StatelessWidget {
     this.executeShellCommand,
     this.exitScript,
     this.controller,
-    this.status,
+    this.sshStatus,
+    this.locationStatus,
     this.error,
   }) : super(key: key);
 
@@ -41,76 +43,59 @@ class Connection extends StatelessWidget {
   //   }
   // }
 
+  TextStyle _outputConnectionTextStyle(AppTheme theme) {
+    return TextStyle(
+      //fontSize: Styles.text['fontSize'],
+      letterSpacing: 5.0,
+      fontWeight: FontWeight.w100,
+      color: theme.onBackground.withOpacity(0.5),
+      decoration: TextDecoration.none,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final AppTheme theme = Provider.of(context, listen: false);
     final Size size = MediaQuery.of(context).size;
+    bool switchValueIsActive = sshStatus == Constants.SSH_DISCONNECTED ||
+            sshStatus == Constants.SSH_CONNECTING
+        ? false
+        : true;
 
     return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
+      // mainAxisAlignment: MainAxisAlignment.center,
       children: <Widget>[
-        Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            SizedBox(height: 32),
-            Container(
-              width: 150,
-              height: 150,
-              decoration: BoxDecoration(
-                color: Colors.green,
-                borderRadius: BorderRadius.circular(10000),
-                boxShadow: [
-                  BoxShadow(
-                    color: status == Constants.DISCONNECTED
-                        ? Colors.red
-                        : status == Constants.CONNECTING
-                            ? Colors.green
-                            : theme.secondary,
-                    blurRadius: 10,
-                    spreadRadius: 10,
-                  )
-                ],
-              ),
-              child: RaisedButton(
-                color: Colors.black,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(1000),
-                ),
-                child: Icon(
-                  MaterialCommunityIcons.power,
-                  color: status == Constants.DISCONNECTED
-                      ? Colors.red
-                      : status == Constants.CONNECTING
-                          ? Colors.green
-                          : theme.secondary,
-                  size: 32,
-                ),
-                onPressed: () {
-                  if (status == Constants.CONNECTING) {
-                    return null;
-                  } else if (status == Constants.DISCONNECTED) {
-                    connect();
-                  } else {
-                    disconnect();
-                  }
+        Container(
+          width: size.width,
+          padding: EdgeInsets.fromLTRB(16, 8, 16, 8),
+          color: Color.fromRGBO(232, 234, 237, 1),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: <Widget>[
+              Text(sshStatus.toUpperCase()),
+              Switch(
+                value: switchValueIsActive,
+                onChanged: (bool value) {
+                  !switchValueIsActive ? connect() : disconnect();
                 },
+                activeTrackColor: Colors.blue,
+                activeColor: Colors.white,
               ),
+            ],
+          ),
+        ),
+        Visibility(
+          visible: !switchValueIsActive,
+          child: Expanded(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[
+                Text('Connect in the upper right hand corner',
+                    style: TextStyle(
+                        fontSize: 24, color: Colors.black.withOpacity(0.5)))
+              ],
             ),
-            SizedBox(height: 32),
-            RaisedButton(
-              child: Text('Start python script'),
-              onPressed: () {
-                executeShellCommand();
-              },
-            ),
-            SizedBox(height: 32),
-            RaisedButton(
-              child: Text('Exit'),
-              onPressed: () {
-                exitScript();
-              },
-            ),
-          ],
+          ),
         ),
         SizedBox(height: 32),
         Container(
@@ -120,24 +105,31 @@ class Connection extends StatelessWidget {
           constraints: BoxConstraints(
             minHeight: 30,
           ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: <Widget>[
-              if (status == Constants.CONNECTING) ...[
-                SpinKitRipple(color: theme.onBackground, size: 48.0),
-              ],
-              if (status != Constants.CONNECTING) ...[
-                Text(
-                  status.toUpperCase(),
-                  style: TextStyle(
-                    //fontSize: Styles.text['fontSize'],
-                    letterSpacing: 5.0,
-                    fontWeight: FontWeight.w100,
-                    color: theme.onBackground.withOpacity(0.5),
-                    decoration: TextDecoration.none,
-                  ),
-                ),
-              ]
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: <Widget>[
+                  Text(sshStatus.toUpperCase(),
+                      style: _outputConnectionTextStyle(theme)),
+                  SizedBox(width: 16),
+                  if (sshStatus == Constants.SSH_CONNECTED) ...[
+                    Icon(Icons.check,
+                        color: theme.onBackground.withOpacity(0.5)),
+                  ],
+                ],
+              ),
+              SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: <Widget>[
+                  Text(
+                    locationStatus.toUpperCase(),
+                    style: _outputConnectionTextStyle(theme),
+                  )
+                ],
+              )
             ],
           ),
         )

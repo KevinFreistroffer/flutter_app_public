@@ -5,6 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../../services/database.service.dart';
 import '../../services/authentication.service.dart';
 import '../../services/loading.service.dart';
@@ -92,6 +93,12 @@ class _HomeState extends State<Home> {
     });
   }
 
+  @override
+  void dispose() {
+    _loadingService.add(isOpen: false);
+    super.dispose();
+  }
+
   Future<void> _handleSignInWithGoogle() async {
     _loadingService.add(isOpen: true);
     var googleResponse = await _authService.beginSignInWithGoogle();
@@ -141,7 +148,6 @@ class _HomeState extends State<Home> {
     } else if (googleResponse is String) {
       _displayErrorDialog(googleResponse);
     }
-
     _loadingService.add(isOpen: false);
   }
 
@@ -260,18 +266,18 @@ class _HomeState extends State<Home> {
                 body: OrientationBuilder(
                   builder: (BuildContext context, Orientation orientation) {
                     return Container(
+                      padding: EdgeInsets.all(16),
                       width: size.width,
                       height: size.height,
+                      constraints: BoxConstraints(minHeight: 200),
                       color: theme.background,
                       child: SingleChildScrollView(
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.spaceAround,
                           children: [
                             Container(
-                              padding: EdgeInsets.all(20),
-                              height: orientation == Orientation.portrait
-                                  ? size.height * .5
-                                  : 180,
+                              height: size.height * .3,
+                              //padding: EdgeInsets.all(20),
                               width: size.width * .9,
                               child: AnimatedOpacity(
                                 duration: Duration(milliseconds: 607),
@@ -286,21 +292,26 @@ class _HomeState extends State<Home> {
                                       //   color: theme.onBackground
                                       //       .withOpacity(0.25),
                                       // ),
-                                      Text(
-                                        Constants.APP_NAME,
-                                        style: TextStyle(
-                                            fontSize: size.width * .075,
-                                            fontWeight: FontWeight.w100,
-                                            color: theme.onBackground),
-                                      ),
+                                      Text(Constants.APP_NAME,
+                                          style: GoogleFonts.notoSans(
+                                              fontSize: size.width * .075,
+                                              fontWeight: FontWeight.bold,
+                                              color: theme.onBackground)),
                                     ],
                                   ),
                                 ),
                               ),
                             ),
+                            SizedBox(height: 32),
+                            /**
+                             * ideally it is split 50 50 or something.
+                             * ideally there's a minimum height of the container
+                             * ideally the title height is say 30% of the total 
+                             * ideally the links are height of 70% column mainAxisAlignment.bottom
+                             */
                             Container(
                               height: orientation == Orientation.portrait
-                                  ? size.height * .5
+                                  ? size.height * .7
                                   : 300,
                               child: Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
@@ -315,8 +326,11 @@ class _HomeState extends State<Home> {
                                       child: Text(
                                         'SIGN UP FOR FREE',
                                         style: TextStyle(
-                                          fontSize: size.width * .05,
-                                          fontWeight: FontWeight.w100,
+                                          fontSize: orientation ==
+                                                  Orientation.portrait
+                                              ? size.width * .05
+                                              : 24,
+                                          fontWeight: FontWeight.w300,
                                           color: theme.onBackground,
                                         ),
                                       ),
@@ -338,8 +352,14 @@ class _HomeState extends State<Home> {
                                           icon: Container(
                                             margin: EdgeInsets.only(right: 5),
                                             child: Image(
-                                              width: size.width * .05,
-                                              height: size.width * .05,
+                                              width: orientation ==
+                                                      Orientation.portrait
+                                                  ? size.width * .05
+                                                  : 24,
+                                              height: orientation ==
+                                                      Orientation.portrait
+                                                  ? size.width * .05
+                                                  : 24,
                                               image: AssetImage(
                                                 'assets/images/google_logo.png',
                                               ),
@@ -349,8 +369,11 @@ class _HomeState extends State<Home> {
                                             child: Text(
                                               'CONTINUE WITH GOOGLE',
                                               style: TextStyle(
-                                                fontSize: size.width * .05,
-                                                fontWeight: FontWeight.w100,
+                                                fontSize: orientation ==
+                                                        Orientation.portrait
+                                                    ? size.width * .05
+                                                    : 24,
+                                                fontWeight: FontWeight.w300,
                                                 color: theme.onBackground,
                                               ),
                                             ),
@@ -390,8 +413,11 @@ class _HomeState extends State<Home> {
                                                 'LOGIN',
                                                 style: TextStyle(
                                                   //fontSize: 18,
-                                                  fontSize: size.width * .05,
-                                                  fontWeight: FontWeight.w100,
+                                                  fontSize: orientation ==
+                                                          Orientation.portrait
+                                                      ? size.width * .05
+                                                      : 24,
+                                                  fontWeight: FontWeight.w300,
                                                   color: theme.onBackground,
                                                 ),
                                               ),
