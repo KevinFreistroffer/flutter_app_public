@@ -3,6 +3,8 @@ import 'package:geolocator/geolocator.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_suncalc/flutter_suncalc.dart';
 import 'position_service.dart';
+import '../store.dart';
+import '../actions/solar_actions.dart';
 
 class SolarService {
   PositionService _positionService = PositionService();
@@ -20,38 +22,22 @@ class SolarService {
   // So then, when it's 20 days since the summer solstice, what is the azimuth of the sunrise? What is the difference from the summer
   // solstice 180 or 0 degree angle? How much does it shift from 180 or 0 day by day?
 
-  Future<double> getAzimuth() async {
+  Future<Map> getAzimuthAndAltitude() async {
     print('getAzimuth()');
-    final position = await _positionService.getCurrentPosition();
-    print('position $position');
+    print(store.state.toString());
+    var sunCalcPosition = SunCalc.getPosition(
+      store.state.sunrise,
+      store.state.latitude,
+      store.state.longitude,
+    );
 
-    var date = new DateTime(2020, 7, 17, 10, 17);
+    print('sunCalcPosition $sunCalcPosition');
+    print('sunCalcPosition azimuth ${sunCalcPosition['azimuth']}');
 
-// get today's sunlight times for London
-    var times =
-        SunCalc.getTimes(DateTime.now(), position.latitude, position.longitude);
-    print('times $times');
-// format sunrise time from the Date object
-    var sunriseStr = times["sunrise"].toLocal();
-
-// get position of the sun (azimuth and altitude) at today's sunrise
-    var sunrisePos = SunCalc.getPosition(
-        times["sunrise"], position.latitude, position.longitude);
-    print('sunrisePos $sunrisePos');
-    var sunsetPos = SunCalc.getPosition(
-        times["sunset"], position.latitude, position.longitude);
-    print('sunsetPos $sunsetPos');
-
-// get sunrise azimuth in degrees
-    var sunriseAzimuth = sunrisePos["azimuth"] * 180 / PI;
-    print('after the azimuth calculations');
-    print(times);
-    print(sunriseStr);
-    print('sunrisePos $sunrisePos');
-    print('sunsetPos $sunsetPos');
-    print(sunriseAzimuth);
-
-    return sunriseAzimuth;
+    return {
+      'azimuth': sunCalcPosition['azimuth'] * 180 / PI,
+      'altitude': sunCalcPosition['altitude'],
+    };
   }
 }
 

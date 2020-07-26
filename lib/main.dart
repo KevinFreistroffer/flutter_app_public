@@ -4,23 +4,21 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_redux/flutter_redux.dart';
 import 'package:redux/redux.dart';
-import './reducers/root_reducer.dart';
+import './reducers/app_reducer.dart';
 import './services/authentication.service.dart';
 import './services/user.service.dart';
 import './services/storage.service.dart';
 import 'App.dart';
-import './models/position.dart';
+import 'models/position_state.dart';
 import './models/app_state.dart';
 import './state/user_model.dart';
 import './state/coordinates_model.dart';
 import './state/times_model.dart';
+import 'store.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  final store = Store<AppState>(
-    rootReducer,
-    initialState: AppState(),
-  );
+
   final StorageService _storageService = StorageService();
 
   SharedPreferences.getInstance().then((prefs) async {

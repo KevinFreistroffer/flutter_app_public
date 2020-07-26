@@ -5,6 +5,7 @@ import 'dart:convert';
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_keto/actions/solar_actions.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoder/geocoder.dart';
@@ -17,6 +18,7 @@ import 'package:flutter_suncalc/flutter_suncalc.dart';
 import 'package:sunrise_sunset/sunrise_sunset.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter_redux/flutter_redux.dart';
+import 'package:intl/intl.dart';
 
 import '../../services/loading.service.dart';
 import '../../globals.dart';
@@ -31,6 +33,7 @@ import '../../services/times_service.dart';
 import '../../widgets/AppBars/signed_in_app_bar.dart';
 import '../../widgets/loading_screen/LoadingScreen.dart';
 import '../../actions/position_actions.dart';
+import '../../actions/times_actions.dart';
 import '../../error_dialog.dart';
 import '../../error_dialog.dart';
 import './styles.dart';
@@ -45,6 +48,8 @@ import 'tabs/tracking.dart';
 
 import 'widgets/app_bar.dart';
 import '../../models/app_state.dart';
+import '../../models/times_state.dart';
+import '../../models/position_state.dart';
 
 class Dashboard extends StatefulWidget {
   Dashboard({Key key}) : super(key: key);
@@ -75,14 +80,18 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
     _loadingService.add(isOpen: false).then((value) async {
       await _getCoordinates();
       await _getTimes();
-      print('dispatching SetCoordinatesAction');
-      StoreProvider.of<AppState>(context)
-          .dispatch(SetCoordinatesAction(123, 123));
+      await _getAzimuthAndAltitude();
     });
   }
 
   @override
   void dispose() {
+    if (_scriptStatus == Constants.SCRIPT_RUNNING) {
+      _stopScript().then((_) async {
+        await _disconnectFromRaspberryPi();
+      });
+    }
+
     super.dispose();
   }
 
@@ -96,11 +105,12 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
     // call position or coords service
     final Position position = await _positionService.getCurrentPosition();
 
+    print('getCoordinates() position $position');
+
     if (position != null) {
-      print('position != null ${position.latitude}');
-      _coordsModel.set(
-        latitude: position.latitude,
-        longitude: position.longitude,
+      print('position != null in _getCoordinates() in dashboard.dart');
+      StoreProvider.of<PositionState>(context).dispatch(
+        SetCoordinatesAction(position.latitude, position.longitude),
       );
     }
     // coordsModel.set()
@@ -111,14 +121,32 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
 
     if (position != null) {
       final response = await _timesService.getSunriseAndSunset(
-          position.latitude, position.longitude);
-      print('times response.data ${response.data.sunrise}');
-      _timesModel.set(
-        sunrise: response.data.sunrise.toString(),
-        sunset: response.data.sunset.toString(),
-        dayLength: response.data.dayLength,
+        position.latitude,
+        position.longitude,
       );
+      print(
+          'timesService response ${response?.data?.sunrise} ${response?.data?.sunset}');
+      if (response != null) {
+        final data = response.data;
+
+        StoreProvider.of<TimesState>(context).dispatch(
+          SetTimesAction(
+            sunrise: response.data.sunrise.toLocal(),
+            sunset: response.data.sunset.toLocal(),
+            dayLength: data.dayLength,
+          ),
+        );
+      }
     }
+  }
+
+  Future<void> _getAzimuthAndAltitude() async {
+    final azimuthAndAltitude = await _solarService.getAzimuthAndAltitude();
+    print('Dashboard getAzimuthAndAltitude $azimuthAndAltitude');
+    StoreProvider.of<TimesState>(context).dispatch(
+      SetAzimuthAndAltitudeAction(
+          azimuthAndAltitude['azimuth'], azimuthAndAltitude['altitude']),
+    );
   }
 
   Future<void> _sshToRaspberryPi() async {
@@ -146,6 +174,8 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
       }
     } catch (error) {
       print('An error occurred calling .connectToClient() $error');
+      setState(() => _sshStatus = Constants.SSH_DISCONNECTED);
+
       _displayErrorDialog(error.toString());
     }
   }
@@ -313,6 +343,7 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     final Size size = MediaQuery.of(context).size;
+    Widget _widget;
     print('size.width * .5 ${size.width * .5}');
 
     //final AppTheme theme = Provider.of<AppTheme>(context);
@@ -320,996 +351,535 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
     return StoreConnector<AppState, AppState>(
         converter: (store) => store.state,
         builder: (context, state) {
-          // print(
-          //   'Dashboard state $state lat long ${state.latitude ?? 'latitude is null'} ${state.longitude ?? 'longitude is null'}',
-          // );
-          return Consumer3<UserModel, CoordinatesModel, TimesModel>(
-            builder: (context, user, coordinates, times, child) {
-              print(
-                  'times ${times.sunrise} ${times.sunset} ${times.dayLength}');
-              print(
-                  'Coordinates ${coordinates.latitude} ${coordinates.longitude}');
-              Widget _widget;
+          print(
+            'Dashboard state: $state ${state.sunrise} ${state.sunset} ${state.dayLength}',
+          );
 
-              return StreamBuilder(
-                initialData: {
-                  'isOpen': true,
-                  'isSigningOut': false,
-                  'title': '',
-                  'text': '',
-                  'size': 'medium',
-                  'showIcon': true,
-                  'showSuccessIcon': false,
-                },
-                stream: _loadingService.controller.stream,
-                builder: (BuildContext context, AsyncSnapshot snapshot) {
-                  if (snapshot.hasData) {
-                    if (snapshot.data['isOpen']) {
-                      _widget = LoadingScreen(
-                        title: snapshot.data['title'],
-                        text: snapshot.data['text'],
-                        showIcon: snapshot.data['showIcon'],
-                        showSuccessIcon: snapshot.data['showSuccessIcon'],
-                        size: snapshot.data['size'],
-                        customIcon: SpinKitRipple(
-                          color: theme.onBackground,
-                          size: 50.0,
-                        ),
-                      );
-                    } else {
-                      _widget = OrientationBuilder(
-                        builder: (context, orientation) {
-                          final Size size = MediaQuery.of(context).size;
-                          bool sshConnected =
-                              _sshStatus == Constants.SSH_DISCONNECTED ||
-                                      _sshStatus == Constants.SSH_CONNECTING
-                                  ? false
-                                  : true;
+          String sunrise = 'N/A';
+          String sunset = 'N/A';
+          String dayLength = 'N/A';
+          DateFormat dateFormat = DateFormat('h:mm:ss');
+          if (state.sunrise != null) {
+            sunrise = dateFormat.format(state.sunrise);
+          }
+          if (state.sunset != null) {
+            sunset = dateFormat.format(state.sunset);
+          }
 
-                          return Scaffold(
-                              key: _globals.scaffoldKey,
-                              backgroundColor: Colors.white,
-                              appBar: PreferredSize(
-                                preferredSize:
-                                    Size.fromHeight(Constants.APP_BAR_HEIGHT),
-                                child: SignedInAppBar(
-                                  title: 'Dashboard',
-                                  automaticallyImplyLeading: false,
-                                  backgroundColor: Colors.white,
-                                  elevation: 0,
-                                  height: 200,
-                                ),
+          if (state.dayLength != null) {
+            var hours = Duration(seconds: state.dayLength).inHours;
+            var minutes =
+                Duration(seconds: state.dayLength).inMinutes.remainder(60);
+            var seconds =
+                Duration(seconds: state.dayLength).inSeconds.remainder(60);
+            dayLength = ' ${hours}h ${minutes}m ${seconds}s';
+          }
+
+          return OrientationBuilder(
+            builder: (context, orientation) {
+              final Size size = MediaQuery.of(context).size;
+              bool sshConnected = _sshStatus == Constants.SSH_DISCONNECTED ||
+                      _sshStatus == Constants.SSH_CONNECTING
+                  ? false
+                  : true;
+
+              return Scaffold(
+                  key: _globals.scaffoldKey,
+                  backgroundColor: Colors.white,
+                  appBar: PreferredSize(
+                    preferredSize: Size.fromHeight(Constants.APP_BAR_HEIGHT),
+                    child: SignedInAppBar(
+                      title: 'Dashboard',
+                      automaticallyImplyLeading: false,
+                      backgroundColor: Colors.white,
+                      elevation: 0,
+                      height: 200,
+                    ),
+                  ),
+                  body: Container(
+                    width: size.width,
+                    height: size.height,
+                    constraints: BoxConstraints(
+                      minHeight: size.height,
+                    ),
+                    child: Column(
+                      //mainAxisSize: MainAxisSize.min,
+                      children: <Widget>[
+                        Container(
+                          width: size.width,
+                          padding: EdgeInsets.fromLTRB(16, 0, 16, 0),
+                          decoration: BoxDecoration(
+                            color: Color.fromRGBO(232, 234, 237, 1),
+                            border: Border(
+                              bottom: BorderSide(
+                                color: Colors.black12,
                               ),
-                              body: Container(
-                                width: size.width,
-                                height: size.height,
-                                constraints: BoxConstraints(
-                                  minHeight: size.height,
-                                ),
-                                child: Column(
-                                  //mainAxisSize: MainAxisSize.min,
-                                  children: <Widget>[
-                                    Container(
-                                      width: size.width,
-                                      padding:
-                                          EdgeInsets.fromLTRB(16, 0, 16, 0),
-                                      decoration: BoxDecoration(
-                                        color: Color.fromRGBO(232, 234, 237, 1),
-                                        border: Border(
-                                          bottom: BorderSide(
-                                            color: Colors.black12,
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: <Widget>[
+                              Text(_sshStatus.toUpperCase(),
+                                  style: GoogleFonts.notoSans(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  )),
+                              Switch(
+                                value: _sshStatus == Constants.SSH_CONNECTED,
+                                onChanged: (bool value) async {
+                                  !sshConnected
+                                      ? await _sshToRaspberryPi()
+                                      : await _disconnectFromRaspberryPi();
+                                },
+                                activeTrackColor: Colors.blue,
+                                activeColor: Colors.white,
+                              ),
+                            ],
+                          ),
+                        ),
+                        Expanded(
+                          child: Container(
+                            width: size.width,
+                            height: size.height,
+                            child: Column(
+                              children: <Widget>[
+                                Visibility(
+                                  visible:
+                                      _sshStatus == Constants.SSH_DISCONNECTED,
+                                  child: Expanded(
+                                    child: Center(
+                                      child: Padding(
+                                        padding: EdgeInsets.all(32),
+                                        child: Text(
+                                          'Connect in the upper right hand corner',
+                                          style: TextStyle(
+                                            fontSize: orientation ==
+                                                    Orientation.portrait
+                                                ? size.width * .04
+                                                : 24,
+                                            color:
+                                                Colors.black.withOpacity(0.5),
                                           ),
                                         ),
                                       ),
-                                      child: Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.spaceBetween,
-                                        children: <Widget>[
-                                          Text(_sshStatus.toUpperCase(),
-                                              style: GoogleFonts.notoSans(
-                                                fontSize: 16,
-                                                fontWeight: FontWeight.bold,
-                                              )),
-                                          Switch(
-                                            value: _sshStatus ==
-                                                Constants.SSH_CONNECTED,
-                                            onChanged: (bool value) async {
-                                              !sshConnected
-                                                  ? await _sshToRaspberryPi()
-                                                  : await _disconnectFromRaspberryPi();
-                                            },
-                                            activeTrackColor: Colors.blue,
-                                            activeColor: Colors.white,
-                                          ),
-                                        ],
-                                      ),
                                     ),
-                                    Expanded(
+                                  ),
+                                ),
+
+                                Visibility(
+                                  visible:
+                                      _sshStatus == Constants.SSH_CONNECTED,
+                                  child: Expanded(
+                                    flex: 1,
+                                    child: SingleChildScrollView(
                                       child: Container(
-                                        width: size.width,
-                                        height: size.height,
+                                        padding:
+                                            EdgeInsets.fromLTRB(16, 8, 16, 8),
                                         child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
                                           children: <Widget>[
-                                            Visibility(
-                                              visible: _sshStatus ==
-                                                  Constants.SSH_DISCONNECTED,
-                                              child: Expanded(
-                                                child: Center(
-                                                  child: Padding(
-                                                    padding: EdgeInsets.all(32),
-                                                    child: Text(
-                                                      'Connect in the upper right hand corner',
-                                                      style: TextStyle(
-                                                        fontSize: orientation ==
-                                                                Orientation
-                                                                    .portrait
-                                                            ? size.width * .04
-                                                            : 24,
-                                                        color: Colors.black
-                                                            .withOpacity(0.5),
+                                            Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment
+                                                      .spaceBetween,
+                                              children: <Widget>[
+                                                Padding(
+                                                  padding: EdgeInsets.only(
+                                                      top: 16, bottom: 16),
+                                                  child: Row(
+                                                    children: <Widget>[
+                                                      Text(
+                                                        'CONNECTION DETAILS',
+                                                        style: TextStyle(
+                                                          fontSize: 14,
+                                                          fontWeight:
+                                                              FontWeight.bold,
+                                                          color: Colors.blue,
+                                                        ),
                                                       ),
-                                                    ),
+                                                    ],
                                                   ),
                                                 ),
-                                              ),
-                                            ),
-
-                                            Visibility(
-                                              visible: _sshStatus ==
-                                                  Constants.SSH_CONNECTED,
-                                              child: Expanded(
-                                                flex: 1,
-                                                child: SingleChildScrollView(
-                                                  child: Container(
-                                                    padding:
-                                                        EdgeInsets.fromLTRB(
-                                                            16, 8, 16, 8),
-                                                    child: Column(
-                                                      crossAxisAlignment:
-                                                          CrossAxisAlignment
-                                                              .start,
-                                                      children: <Widget>[
-                                                        Column(
-                                                          crossAxisAlignment:
-                                                              CrossAxisAlignment
-                                                                  .start,
-                                                          mainAxisAlignment:
-                                                              MainAxisAlignment
-                                                                  .spaceBetween,
-                                                          children: <Widget>[
-                                                            Padding(
-                                                              padding: EdgeInsets
-                                                                  .only(
-                                                                      top: 16,
-                                                                      bottom:
-                                                                          16),
-                                                              child: Row(
-                                                                children: <
-                                                                    Widget>[
-                                                                  Text(
-                                                                    'CONNECTION DETAILS',
-                                                                    style:
-                                                                        TextStyle(
-                                                                      fontSize:
-                                                                          14,
-                                                                      fontWeight:
-                                                                          FontWeight
-                                                                              .bold,
-                                                                      color: Colors
-                                                                          .blue,
-                                                                    ),
-                                                                  ),
-                                                                ],
-                                                              ),
-                                                            ),
-                                                            Text(
-                                                              'Status',
-                                                              style: TextStyle(
-                                                                color: Colors
-                                                                    .black,
-                                                                fontWeight:
-                                                                    FontWeight
-                                                                        .bold,
-                                                              ),
-                                                            ),
-                                                            Text(
-                                                              _scriptStatus,
-                                                              style: TextStyle(
-                                                                color: Colors
-                                                                    .black,
-                                                                fontSize: 14,
-                                                              ),
-                                                            ),
-                                                          ],
-                                                        ),
-                                                        Divider(
-                                                          color: Colors.black12,
-                                                        ),
-                                                        Column(
-                                                          crossAxisAlignment:
-                                                              CrossAxisAlignment
-                                                                  .start,
-                                                          mainAxisAlignment:
-                                                              MainAxisAlignment
-                                                                  .spaceBetween,
-                                                          children: <Widget>[
-                                                            Text(
-                                                              'Latitude',
-                                                              style: TextStyle(
-                                                                color: Colors
-                                                                    .black,
-                                                                fontWeight:
-                                                                    FontWeight
-                                                                        .bold,
-                                                              ),
-                                                            ),
-                                                            Text(
-                                                              coordinates
-                                                                      .latitude
-                                                                      .toString() ??
-                                                                  'N/A',
-                                                              style: TextStyle(
-                                                                color: Colors
-                                                                    .black,
-                                                                fontSize: 14,
-                                                              ),
-                                                            ),
-                                                          ],
-                                                        ),
-                                                        Divider(
-                                                          color: Colors.black12,
-                                                        ),
-                                                        Column(
-                                                          crossAxisAlignment:
-                                                              CrossAxisAlignment
-                                                                  .start,
-                                                          mainAxisAlignment:
-                                                              MainAxisAlignment
-                                                                  .spaceBetween,
-                                                          children: <Widget>[
-                                                            Text(
-                                                              'Longitude',
-                                                              style: TextStyle(
-                                                                color: Colors
-                                                                    .black,
-                                                                fontWeight:
-                                                                    FontWeight
-                                                                        .bold,
-                                                              ),
-                                                            ),
-                                                            Text(
-                                                              coordinates
-                                                                      .longitude
-                                                                      .toString() ??
-                                                                  'N/A',
-                                                              style: TextStyle(
-                                                                color: Colors
-                                                                    .black,
-                                                                fontSize: 14,
-                                                              ),
-                                                            ),
-                                                          ],
-                                                        ),
-                                                        Divider(
-                                                          color: Colors.black12,
-                                                        ),
-                                                        Column(
-                                                          crossAxisAlignment:
-                                                              CrossAxisAlignment
-                                                                  .start,
-                                                          mainAxisAlignment:
-                                                              MainAxisAlignment
-                                                                  .spaceBetween,
-                                                          children: <Widget>[
-                                                            Text(
-                                                              'Sunrise',
-                                                              style: TextStyle(
-                                                                color: Colors
-                                                                    .black,
-                                                                fontWeight:
-                                                                    FontWeight
-                                                                        .bold,
-                                                              ),
-                                                            ),
-                                                            Text(
-                                                              times.sunrise ??
-                                                                  'N/A',
-                                                              style: TextStyle(
-                                                                color: Colors
-                                                                    .black,
-                                                                fontSize: 14,
-                                                              ),
-                                                            ),
-                                                          ],
-                                                        ),
-                                                        Divider(
-                                                          color: Colors.black12,
-                                                        ),
-                                                        Column(
-                                                          crossAxisAlignment:
-                                                              CrossAxisAlignment
-                                                                  .start,
-                                                          mainAxisAlignment:
-                                                              MainAxisAlignment
-                                                                  .spaceBetween,
-                                                          children: <Widget>[
-                                                            Text(
-                                                              'Sunset',
-                                                              style: TextStyle(
-                                                                color: Colors
-                                                                    .black,
-                                                                fontWeight:
-                                                                    FontWeight
-                                                                        .bold,
-                                                              ),
-                                                            ),
-                                                            Text(
-                                                              times.sunset ??
-                                                                  'N/A',
-                                                              style: TextStyle(
-                                                                color: Colors
-                                                                    .black,
-                                                                fontSize: 14,
-                                                              ),
-                                                            ),
-                                                          ],
-                                                        ),
-                                                        Divider(
-                                                          color: Colors.black12,
-                                                        ),
-                                                        Column(
-                                                          crossAxisAlignment:
-                                                              CrossAxisAlignment
-                                                                  .start,
-                                                          mainAxisAlignment:
-                                                              MainAxisAlignment
-                                                                  .spaceBetween,
-                                                          children: <Widget>[
-                                                            Text(
-                                                              'Current Angle',
-                                                              style: TextStyle(
-                                                                color: Colors
-                                                                    .black,
-                                                                fontWeight:
-                                                                    FontWeight
-                                                                        .bold,
-                                                              ),
-                                                            ),
-                                                            Text(
-                                                              '20°',
-                                                              style: TextStyle(
-                                                                color: Colors
-                                                                    .black,
-                                                                fontSize: 14,
-                                                              ),
-                                                            ),
-                                                          ],
-                                                        ),
-                                                        Divider(
-                                                          color: Colors.black12,
-                                                        ),
-                                                        Column(
-                                                          crossAxisAlignment:
-                                                              CrossAxisAlignment
-                                                                  .start,
-                                                          mainAxisAlignment:
-                                                              MainAxisAlignment
-                                                                  .spaceBetween,
-                                                          children: <Widget>[
-                                                            Text(
-                                                              'Azimuth',
-                                                              style: TextStyle(
-                                                                color: Colors
-                                                                    .black,
-                                                                fontWeight:
-                                                                    FontWeight
-                                                                        .bold,
-                                                              ),
-                                                            ),
-                                                            Text(
-                                                              '123',
-                                                              style: TextStyle(
-                                                                color: Colors
-                                                                    .black,
-                                                                fontSize: 14,
-                                                              ),
-                                                            ),
-                                                          ],
-                                                        ),
-                                                        Divider(
-                                                          color: Colors.black12,
-                                                        ),
-                                                        Column(
-                                                          crossAxisAlignment:
-                                                              CrossAxisAlignment
-                                                                  .start,
-                                                          mainAxisAlignment:
-                                                              MainAxisAlignment
-                                                                  .spaceBetween,
-                                                          children: <Widget>[
-                                                            Text(
-                                                              'Altitude',
-                                                              style: TextStyle(
-                                                                color: Colors
-                                                                    .black,
-                                                                fontWeight:
-                                                                    FontWeight
-                                                                        .bold,
-                                                              ),
-                                                            ),
-                                                            Text(
-                                                              '1231212',
-                                                              style: TextStyle(
-                                                                color: Colors
-                                                                    .black,
-                                                                fontSize: 14,
-                                                              ),
-                                                            ),
-                                                          ],
-                                                        ),
-                                                        Divider(
-                                                          color: Colors.black12,
-                                                        ),
-                                                        Column(
-                                                          crossAxisAlignment:
-                                                              CrossAxisAlignment
-                                                                  .start,
-                                                          mainAxisAlignment:
-                                                              MainAxisAlignment
-                                                                  .spaceBetween,
-                                                          children: <Widget>[
-                                                            Text(
-                                                              'Day Length',
-                                                              style: TextStyle(
-                                                                color: Colors
-                                                                    .black,
-                                                                fontWeight:
-                                                                    FontWeight
-                                                                        .bold,
-                                                              ),
-                                                            ),
-                                                            Text(
-                                                              times.dayLength
-                                                                      .toString() ??
-                                                                  'N/A',
-                                                              style: TextStyle(
-                                                                color: Colors
-                                                                    .black,
-                                                                fontSize: 14,
-                                                              ),
-                                                            ),
-                                                          ],
-                                                        ),
-                                                        Divider(
-                                                          color: Colors.black12,
-                                                        ),
-                                                        // SizedBox(height: 16),
-                                                        // Container(
-                                                        //   width: size.width,
-                                                        //   child: RaisedButton(
-                                                        //     color: Colors.grey,
-                                                        //     onPressed: () {},
-                                                        //     child: Text(
-                                                        //       'Clear and Reset',
-                                                        //       style: TextStyle(
-                                                        //         color: Colors.white,
-                                                        //       ),
-                                                        //     ),
-                                                        //   ),
-                                                        // ),
-                                                      ],
-                                                    ),
+                                                Text(
+                                                  'Status',
+                                                  style: TextStyle(
+                                                    color: Colors.black,
+                                                    fontWeight: FontWeight.bold,
                                                   ),
                                                 ),
-                                              ),
-                                            ),
-
-                                            Visibility(
-                                              visible: false,
-                                              child: Container(
-                                                decoration: BoxDecoration(
-                                                  border: Border(
-                                                    bottom: BorderSide(
-                                                      color: Colors.black12,
-                                                      width: 1.0,
-                                                    ),
+                                                Text(
+                                                  _scriptStatus,
+                                                  style: TextStyle(
+                                                    color: Colors.black,
+                                                    fontSize: 14,
                                                   ),
-                                                  color: _scriptStatus !=
-                                                          Constants
-                                                              .SCRIPT_RUNNING
-                                                      ? Color.fromRGBO(
-                                                          232, 234, 237, 1)
-                                                      : Colors.blue,
                                                 ),
-                                                padding: EdgeInsets.fromLTRB(
-                                                    16, 0, 16, 0),
-                                                child: Row(
-                                                  mainAxisAlignment:
-                                                      MainAxisAlignment
-                                                          .spaceBetween,
-                                                  crossAxisAlignment:
-                                                      CrossAxisAlignment.center,
-                                                  children: <Widget>[
-                                                    Text(
-                                                      _scriptStatus
-                                                          .toUpperCase(),
-                                                      style: TextStyle(
-                                                        color: Colors.black,
-                                                      ),
-                                                    ),
-                                                    Switch(
-                                                      value: _scriptStatus ==
-                                                              Constants
-                                                                  .SCRIPT_NOT_RUNNING
-                                                          ? false
-                                                          : true,
-                                                      onChanged:
-                                                          (bool isOff) async {
-                                                        print(
-                                                            'onChanged isOff $isOff');
-                                                        if (isOff) {
-                                                          await _startScript();
-                                                        } else {
-                                                          await _stopScript();
-                                                        }
-                                                      },
-                                                      activeTrackColor: Colors
-                                                          .black
-                                                          .withOpacity(0.25),
-                                                      activeColor: Colors.white,
-                                                    ),
-                                                  ],
-                                                ),
-                                              ),
+                                              ],
                                             ),
-
-                                            Visibility(
-                                              visible: false, // THis is
-                                              // Okay once the script is completed, it should leave the details
-                                              // visible. An option reset will clear the details
-                                              child: Expanded(
-                                                flex: 2,
-                                                child: Column(
-                                                  crossAxisAlignment:
-                                                      CrossAxisAlignment.start,
-                                                  children: <Widget>[
-                                                    // Container(
-                                                    //   width: size.width,
-                                                    //   padding: EdgeInsets.fromLTRB(
-                                                    //       16, 24, 16, 8),
-                                                    //   color: Color.fromRGBO(
-                                                    //       232, 234, 237, 1),
-                                                    //   child: Row(
-                                                    //     mainAxisAlignment:
-                                                    //         MainAxisAlignment
-                                                    //             .spaceBetween,
-                                                    //     children: <Widget>[
-                                                    //       Text(
-                                                    //         'CONNECTION DETAILS',
-                                                    //         style: TextStyle(
-                                                    //           fontWeight:
-                                                    //               FontWeight.bold,
-                                                    //           color: Colors.blue,
-                                                    //         ),
-                                                    //       ),
-                                                    //     ],
-                                                    //   ),
-                                                    // ),
-                                                    Expanded(
-                                                        child: Padding(
-                                                      padding:
-                                                          EdgeInsets.fromLTRB(
-                                                              16, 16, 16, 16),
-                                                      child: ListView(
-                                                        children: <Widget>[
-                                                          Column(
-                                                            crossAxisAlignment:
-                                                                CrossAxisAlignment
-                                                                    .start,
-                                                            mainAxisAlignment:
-                                                                MainAxisAlignment
-                                                                    .spaceBetween,
-                                                            children: <Widget>[
-                                                              Text(
-                                                                'Status',
-                                                                style:
-                                                                    TextStyle(
-                                                                  color: Colors
-                                                                      .black,
-                                                                  fontWeight:
-                                                                      FontWeight
-                                                                          .bold,
-                                                                ),
-                                                              ),
-                                                              Text(
-                                                                'Tracking',
-                                                                style:
-                                                                    TextStyle(
-                                                                  color: Colors
-                                                                      .black,
-                                                                  fontSize: 14,
-                                                                ),
-                                                              ),
-                                                            ],
-                                                          ),
-                                                          Divider(
-                                                            color:
-                                                                Colors.black12,
-                                                          ),
-                                                          Column(
-                                                            crossAxisAlignment:
-                                                                CrossAxisAlignment
-                                                                    .start,
-                                                            mainAxisAlignment:
-                                                                MainAxisAlignment
-                                                                    .spaceBetween,
-                                                            children: <Widget>[
-                                                              Text(
-                                                                'Latitude',
-                                                                style:
-                                                                    TextStyle(
-                                                                  color: Colors
-                                                                      .black,
-                                                                  fontWeight:
-                                                                      FontWeight
-                                                                          .bold,
-                                                                ),
-                                                              ),
-                                                              Text(
-                                                                '123.23423',
-                                                                style:
-                                                                    TextStyle(
-                                                                  color: Colors
-                                                                      .black,
-                                                                  fontSize: 14,
-                                                                ),
-                                                              ),
-                                                            ],
-                                                          ),
-                                                          Divider(
-                                                            color:
-                                                                Colors.black12,
-                                                          ),
-                                                          Column(
-                                                            crossAxisAlignment:
-                                                                CrossAxisAlignment
-                                                                    .start,
-                                                            mainAxisAlignment:
-                                                                MainAxisAlignment
-                                                                    .spaceBetween,
-                                                            children: <Widget>[
-                                                              Text(
-                                                                'Longitude',
-                                                                style:
-                                                                    TextStyle(
-                                                                  color: Colors
-                                                                      .black,
-                                                                  fontWeight:
-                                                                      FontWeight
-                                                                          .bold,
-                                                                ),
-                                                              ),
-                                                              Text(
-                                                                '-120.23423',
-                                                                style:
-                                                                    TextStyle(
-                                                                  color: Colors
-                                                                      .black,
-                                                                  fontSize: 14,
-                                                                ),
-                                                              ),
-                                                            ],
-                                                          ),
-                                                          Divider(
-                                                            color:
-                                                                Colors.black12,
-                                                          ),
-                                                          Column(
-                                                            crossAxisAlignment:
-                                                                CrossAxisAlignment
-                                                                    .start,
-                                                            mainAxisAlignment:
-                                                                MainAxisAlignment
-                                                                    .spaceBetween,
-                                                            children: <Widget>[
-                                                              Text(
-                                                                'Sunrise',
-                                                                style:
-                                                                    TextStyle(
-                                                                  color: Colors
-                                                                      .black,
-                                                                  fontWeight:
-                                                                      FontWeight
-                                                                          .bold,
-                                                                ),
-                                                              ),
-                                                              Text(
-                                                                '5:43am',
-                                                                style:
-                                                                    TextStyle(
-                                                                  color: Colors
-                                                                      .black,
-                                                                  fontSize: 14,
-                                                                ),
-                                                              ),
-                                                            ],
-                                                          ),
-                                                          Divider(
-                                                            color:
-                                                                Colors.black12,
-                                                          ),
-                                                          Column(
-                                                            crossAxisAlignment:
-                                                                CrossAxisAlignment
-                                                                    .start,
-                                                            mainAxisAlignment:
-                                                                MainAxisAlignment
-                                                                    .spaceBetween,
-                                                            children: <Widget>[
-                                                              Text(
-                                                                'Sunset',
-                                                                style:
-                                                                    TextStyle(
-                                                                  color: Colors
-                                                                      .black,
-                                                                  fontWeight:
-                                                                      FontWeight
-                                                                          .bold,
-                                                                ),
-                                                              ),
-                                                              Text(
-                                                                '8:50pm',
-                                                                style:
-                                                                    TextStyle(
-                                                                  color: Colors
-                                                                      .black,
-                                                                  fontSize: 14,
-                                                                ),
-                                                              ),
-                                                            ],
-                                                          ),
-                                                          Divider(
-                                                            color:
-                                                                Colors.black12,
-                                                          ),
-                                                          Column(
-                                                            crossAxisAlignment:
-                                                                CrossAxisAlignment
-                                                                    .start,
-                                                            mainAxisAlignment:
-                                                                MainAxisAlignment
-                                                                    .spaceBetween,
-                                                            children: <Widget>[
-                                                              Text(
-                                                                'Current Angle',
-                                                                style:
-                                                                    TextStyle(
-                                                                  color: Colors
-                                                                      .black,
-                                                                  fontWeight:
-                                                                      FontWeight
-                                                                          .bold,
-                                                                ),
-                                                              ),
-                                                              Text(
-                                                                '20°',
-                                                                style:
-                                                                    TextStyle(
-                                                                  color: Colors
-                                                                      .black,
-                                                                  fontSize: 14,
-                                                                ),
-                                                              ),
-                                                            ],
-                                                          ),
-                                                          Divider(
-                                                            color:
-                                                                Colors.black12,
-                                                          ),
-                                                          Column(
-                                                            crossAxisAlignment:
-                                                                CrossAxisAlignment
-                                                                    .start,
-                                                            mainAxisAlignment:
-                                                                MainAxisAlignment
-                                                                    .spaceBetween,
-                                                            children: <Widget>[
-                                                              Text(
-                                                                'Azimuth',
-                                                                style:
-                                                                    TextStyle(
-                                                                  color: Colors
-                                                                      .black,
-                                                                  fontWeight:
-                                                                      FontWeight
-                                                                          .bold,
-                                                                ),
-                                                              ),
-                                                              Text(
-                                                                '123',
-                                                                style:
-                                                                    TextStyle(
-                                                                  color: Colors
-                                                                      .black,
-                                                                  fontSize: 14,
-                                                                ),
-                                                              ),
-                                                            ],
-                                                          ),
-                                                          Divider(
-                                                            color:
-                                                                Colors.black12,
-                                                          ),
-                                                          Column(
-                                                            crossAxisAlignment:
-                                                                CrossAxisAlignment
-                                                                    .start,
-                                                            mainAxisAlignment:
-                                                                MainAxisAlignment
-                                                                    .spaceBetween,
-                                                            children: <Widget>[
-                                                              Text(
-                                                                'Altitude',
-                                                                style:
-                                                                    TextStyle(
-                                                                  color: Colors
-                                                                      .black,
-                                                                  fontWeight:
-                                                                      FontWeight
-                                                                          .bold,
-                                                                ),
-                                                              ),
-                                                              Text(
-                                                                '1231212',
-                                                                style:
-                                                                    TextStyle(
-                                                                  color: Colors
-                                                                      .black,
-                                                                  fontSize: 14,
-                                                                ),
-                                                              ),
-                                                            ],
-                                                          ),
-                                                          Divider(
-                                                            color:
-                                                                Colors.black12,
-                                                          ),
-                                                          Column(
-                                                            crossAxisAlignment:
-                                                                CrossAxisAlignment
-                                                                    .start,
-                                                            mainAxisAlignment:
-                                                                MainAxisAlignment
-                                                                    .spaceBetween,
-                                                            children: <Widget>[
-                                                              Text(
-                                                                'Remaining Time',
-                                                                style:
-                                                                    TextStyle(
-                                                                  color: Colors
-                                                                      .black,
-                                                                  fontWeight:
-                                                                      FontWeight
-                                                                          .bold,
-                                                                ),
-                                                              ),
-                                                              Text(
-                                                                '1 hour 22 minutes 15 seconds',
-                                                                style:
-                                                                    TextStyle(
-                                                                  color: Colors
-                                                                      .black,
-                                                                  fontSize: 14,
-                                                                ),
-                                                              ),
-                                                            ],
-                                                          ),
-                                                          Divider(
-                                                            color:
-                                                                Colors.black12,
-                                                          ),
-                                                          SizedBox(height: 16),
-                                                          RaisedButton(
-                                                            color: Colors.grey,
-                                                            onPressed: () {},
-                                                            child: Text(
-                                                              'Clear and Reset',
-                                                              style: TextStyle(
-                                                                color: Colors
-                                                                    .white,
-                                                              ),
-                                                            ),
-                                                          ),
-                                                        ],
-                                                      ),
-                                                    )),
-                                                  ],
-                                                ),
-                                              ),
+                                            Divider(
+                                              color: Colors.black12,
                                             ),
-                                            // if (orientation ==
-                                            //     Orientation.landscape) ...[
-                                            //   CustomAppBar()
-                                            // ],
-                                            // Expanded(
-                                            //   child: TabBarView(
-                                            //     controller: _tabController,
-                                            //     children: <Widget>[
-                                            //       Connection(
-                                            //         connect: _sshToRaspberryPi,
-                                            //         disconnect:
-                                            //             _disconnectFromRaspberryPi,
-                                            //         executeShellCommand: _startScript,
-                                            //         exitScript: _raspberryPiService
-                                            //             .exitTheScript,
-                                            //         controller: _tabController,
-                                            //         status: _sshStatus,
-                                            //         locationStatus: _locationStatus,
-                                            //         error: null,
+                                            Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment
+                                                      .spaceBetween,
+                                              children: <Widget>[
+                                                Text(
+                                                  'Latitude',
+                                                  style: TextStyle(
+                                                    color: Colors.black,
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                ),
+                                                Text(
+                                                  state.latitude != null
+                                                      ? state.latitude
+                                                          .toStringAsFixed(3)
+                                                      : 'N/A',
+                                                  style: TextStyle(
+                                                    color: Colors.black,
+                                                    fontSize: 14,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                            Divider(
+                                              color: Colors.black12,
+                                            ),
+                                            Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment
+                                                      .spaceBetween,
+                                              children: <Widget>[
+                                                Text(
+                                                  'Longitude',
+                                                  style: TextStyle(
+                                                    color: Colors.black,
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                ),
+                                                Text(
+                                                  state.longitude != null
+                                                      ? state.longitude
+                                                          .toStringAsFixed(3)
+                                                      : 'N/A',
+                                                  style: TextStyle(
+                                                    color: Colors.black,
+                                                    fontSize: 14,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                            Divider(
+                                              color: Colors.black12,
+                                            ),
+                                            Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment
+                                                      .spaceBetween,
+                                              children: <Widget>[
+                                                Text(
+                                                  'Sunrise',
+                                                  style: TextStyle(
+                                                    color: Colors.black,
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                ),
+                                                Text(
+                                                  '$sunrise AM',
+                                                  style: TextStyle(
+                                                    color: Colors.black,
+                                                    fontSize: 14,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                            Divider(
+                                              color: Colors.black12,
+                                            ),
+                                            Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment
+                                                      .spaceBetween,
+                                              children: <Widget>[
+                                                Text(
+                                                  'Sunset',
+                                                  style: TextStyle(
+                                                    color: Colors.black,
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                ),
+                                                Text(
+                                                  '$sunset PM',
+                                                  style: TextStyle(
+                                                    color: Colors.black,
+                                                    fontSize: 14,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                            Divider(
+                                              color: Colors.black12,
+                                            ),
+                                            Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment
+                                                      .spaceBetween,
+                                              children: <Widget>[
+                                                Text(
+                                                  'Current Angle',
+                                                  style: TextStyle(
+                                                    color: Colors.black,
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                ),
+                                                Text(
+                                                  '20°',
+                                                  style: TextStyle(
+                                                    color: Colors.black,
+                                                    fontSize: 14,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                            Divider(
+                                              color: Colors.black12,
+                                            ),
+                                            Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment
+                                                      .spaceBetween,
+                                              children: <Widget>[
+                                                Text(
+                                                  'Azimuth',
+                                                  style: TextStyle(
+                                                    color: Colors.black,
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                ),
+                                                Text(
+                                                  state.azimuth
+                                                      .toStringAsFixed(3),
+                                                  style: TextStyle(
+                                                    color: Colors.black,
+                                                    fontSize: 14,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                            Divider(
+                                              color: Colors.black12,
+                                            ),
+                                            Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment
+                                                      .spaceBetween,
+                                              children: <Widget>[
+                                                Text(
+                                                  'Altitude',
+                                                  style: TextStyle(
+                                                    color: Colors.black,
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                ),
+                                                Text(
+                                                  state.altitude
+                                                      .toStringAsFixed(3),
+                                                  style: TextStyle(
+                                                    color: Colors.black,
+                                                    fontSize: 14,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                            Divider(
+                                              color: Colors.black12,
+                                            ),
+                                            Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment
+                                                      .spaceBetween,
+                                              children: <Widget>[
+                                                Text(
+                                                  'Twilight Length',
+                                                  style: TextStyle(
+                                                    color: Colors.black,
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                ),
+                                                Text(
+                                                  dayLength,
+                                                  style: TextStyle(
+                                                    color: Colors.black,
+                                                    fontSize: 14,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                            Divider(
+                                              color: Colors.black12,
+                                            ),
+                                            // SizedBox(height: 16),
+                                            // Container(
+                                            //   width: size.width,
+                                            //   child: RaisedButton(
+                                            //     color: Colors.grey,
+                                            //     onPressed: () {},
+                                            //     child: Text(
+                                            //       'Clear and Reset',
+                                            //       style: TextStyle(
+                                            //         color: Colors.white,
                                             //       ),
-                                            //       Tracking(
-                                            //         controller: _tabController,
-                                            //         status: _sshStatus,
-                                            //         orientation: orientation,
-                                            //       ),
-                                            //       Text(
-                                            //         'abcdFDSFDSFDSFSDFSDFefg',
-                                            //         style: TextStyle(
-                                            //           color: Colors.blue,
-                                            //         ),
-                                            //       ),
-                                            //     ],
+                                            //     ),
                                             //   ),
                                             // ),
                                           ],
                                         ),
                                       ),
                                     ),
-                                  ],
+                                  ),
                                 ),
-                              ),
-                              bottomNavigationBar: _sshStatus ==
-                                      Constants.SSH_CONNECTED
-                                  ? Container(
-                                      width: size.width,
-                                      height: 48,
-                                      padding: EdgeInsets.all(0),
-                                      margin: EdgeInsets.all(0),
-                                      child: RaisedButton(
-                                        color: Colors.blue,
-                                        child: Text(
-                                          _scriptStatus ==
-                                                  Constants.SCRIPT_NOT_RUNNING
-                                              ? 'START'
-                                              : 'STOP',
-                                          textAlign: TextAlign.center,
+
+                                Visibility(
+                                  visible: false,
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      border: Border(
+                                        bottom: BorderSide(
+                                          color: Colors.black12,
+                                          width: 1.0,
+                                        ),
+                                      ),
+                                      color: _scriptStatus !=
+                                              Constants.SCRIPT_RUNNING
+                                          ? Color.fromRGBO(232, 234, 237, 1)
+                                          : Colors.blue,
+                                    ),
+                                    padding: EdgeInsets.fromLTRB(16, 0, 16, 0),
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.center,
+                                      children: <Widget>[
+                                        Text(
+                                          _scriptStatus.toUpperCase(),
                                           style: TextStyle(
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.bold,
-                                            color: Colors.white,
+                                            color: Colors.black,
                                           ),
                                         ),
-                                        onPressed: () async {
-                                          if (_scriptStatus ==
-                                              Constants.SCRIPT_NOT_RUNNING) {
-                                            await _startScript();
-                                          } else {
-                                            await _stopScript();
-                                          }
-                                        },
-                                      ),
-                                    )
-                                  : null);
-                        },
-                      );
-                    }
-                  } else {
-                    _widget = LoadingScreen();
-                  }
+                                        Switch(
+                                          value: _scriptStatus ==
+                                                  Constants.SCRIPT_NOT_RUNNING
+                                              ? false
+                                              : true,
+                                          onChanged: (bool isOff) async {
+                                            print('onChanged isOff $isOff');
+                                            if (isOff) {
+                                              await _startScript();
+                                            } else {
+                                              await _stopScript();
+                                            }
+                                          },
+                                          activeTrackColor:
+                                              Colors.black.withOpacity(0.25),
+                                          activeColor: Colors.white,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
 
-                  return _widget;
-                },
-              );
+                                // if (orientation ==
+                                //     Orientation.landscape) ...[
+                                //   CustomAppBar()
+                                // ],
+                                // Expanded(
+                                //   child: TabBarView(
+                                //     controller: _tabController,
+                                //     children: <Widget>[
+                                //       Connection(
+                                //         connect: _sshToRaspberryPi,
+                                //         disconnect:
+                                //             _disconnectFromRaspberryPi,
+                                //         executeShellCommand: _startScript,
+                                //         exitScript: _raspberryPiService
+                                //             .exitTheScript,
+                                //         controller: _tabController,
+                                //         status: _sshStatus,
+                                //         locationStatus: _locationStatus,
+                                //         error: null,
+                                //       ),
+                                //       Tracking(
+                                //         controller: _tabController,
+                                //         status: _sshStatus,
+                                //         orientation: orientation,
+                                //       ),
+                                //       Text(
+                                //         'abcdFDSFDSFDSFSDFSDFefg',
+                                //         style: TextStyle(
+                                //           color: Colors.blue,
+                                //         ),
+                                //       ),
+                                //     ],
+                                //   ),
+                                // ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  bottomNavigationBar: _sshStatus == Constants.SSH_CONNECTED
+                      ? Container(
+                          width: size.width,
+                          height: 48,
+                          padding: EdgeInsets.all(0),
+                          margin: EdgeInsets.all(0),
+                          child: RaisedButton(
+                            color: Colors.blue,
+                            child: Text(
+                              _scriptStatus == Constants.SCRIPT_NOT_RUNNING
+                                  ? 'START'
+                                  : 'STOP',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                            onPressed: () async {
+                              if (_scriptStatus ==
+                                  Constants.SCRIPT_NOT_RUNNING) {
+                                await _startScript();
+                              } else {
+                                await _stopScript();
+                              }
+                            },
+                          ),
+                        )
+                      : null);
             },
           );
         });

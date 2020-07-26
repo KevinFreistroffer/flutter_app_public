@@ -1,17 +1,15 @@
 import 'package:redux/redux.dart';
 import '../actions/position_actions.dart';
-import '../models/position.dart';
-import '../models/app_state.dart';
+import '../models/position_state.dart';
+import '../models/position_state.dart';
 
-AppState positionReducer(AppState prevState, dynamic action) {
-  AppState newState = AppState.fromAppState(prevState);
-
+PositionState positionReducer(PositionState state, dynamic action) {
   if (action is SetCoordinatesAction) {
-    newState.latitude = action.latitude;
-    newState.longitude = action.longitude;
-
-    return newState;
+    return state.copyWith(
+      latitude: action.latitude,
+      longitude: action.longitude,
+    );
   } else {
-    return newState;
+    return state;
   }
 }

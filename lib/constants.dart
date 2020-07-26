@@ -1,5 +1,3 @@
-import 'package:flutter/material.dart';
-
 class Constants {
   static const String APP_NAME = 'FlutterPi';
   static const String ERROR_USERNAME_REQUIRED = 'Username is required.';
