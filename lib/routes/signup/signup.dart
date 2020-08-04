@@ -5,6 +5,8 @@ import 'package:flutter/painting.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:email_validator/email_validator.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_redux/flutter_redux.dart';
+import 'package:redux/redux.dart';
 import '../../models/new_user.dart';
 import 'styles.dart';
 import '../../services/authentication.service.dart';
@@ -19,8 +21,10 @@ import '../../theme.dart';
 import '../../wait.dart';
 import '../../error_dialog.dart';
 import '../../form_control.dart';
-
-import '../../state/user_model.dart';
+import '../../store.dart';
+import '../../state/app_state.dart';
+import '../../models/user_model.dart';
+import '../../actions/user_actions.dart';
 
 class SignUp extends StatefulWidget {
   SignUp({Key key}) : super(key: key);
@@ -34,7 +38,7 @@ abstract class Step {
 
   void setInitialErrorValues(Map keyValues) {
     _errors = keyValues;
-    print('setInitialValues $_errors');
+    print('setInitialErrorValues $_errors');
   }
 
   Map get errors => _errors;
@@ -97,7 +101,6 @@ class SignUpState extends State<SignUp> {
   Username _username;
   Password _password;
   ConfirmPassword _confirmPassword;
-  UserModel _userModel;
   PageController _pageController;
   String _cachedValidEmail = '';
   String _cachedValidUsername = '';
@@ -147,7 +150,6 @@ class SignUpState extends State<SignUp> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _userModel = Provider.of<UserModel>(context, listen: false);
   }
 
   void _handleInputOnChanged(String name, String value) {
@@ -222,7 +224,6 @@ class SignUpState extends State<SignUp> {
         }
 
         final List snapshots = await _emailAndUsernameAreUnique();
-        print('snapshots $snapshots');
 
         // Email and username are available to sign up
         if (snapshots.every((snapshot) => snapshot == null)) {
@@ -273,7 +274,7 @@ class SignUpState extends State<SignUp> {
         );
 
         if (authResult is AuthResult) {
-          _userModel.set(uid: authResult.user.uid);
+          store.dispatch(SetUserValuesAction(uid: authResult.user.uid));
           // success
 
           final createResponse =
@@ -289,13 +290,15 @@ class SignUpState extends State<SignUp> {
           );
 
           if (createResponse is DocumentReference) {
-            _userModel.set(
-              uid: authResult.user.uid,
-              email: _email.value,
-              username: _username.value,
-              nickname: '',
-              phoneNumber: authResult.user.phoneNumber ?? '',
-              platform: Constants.EMAIL_OR_USERNAME,
+            store.dispatch(
+              SetUserValuesAction(
+                uid: authResult.user.uid,
+                email: _email.value,
+                username: _username.value,
+                nickname: '',
+                phoneNumber: authResult.user.phoneNumber ?? '',
+                platform: Constants.EMAIL_OR_USERNAME,
+              ),
             );
           } else {
             ErrorDialog.displayErrorDialog(context, createResponse.toString());
@@ -565,80 +568,67 @@ class SignUpState extends State<SignUp> {
   Widget build(BuildContext context) {
     final Size size = MediaQuery.of(context).size;
 
-    return StreamBuilder(
-      stream: _loadingService.controller.stream,
-      builder: (BuildContext context, AsyncSnapshot snapshot) {
-        Widget _widget;
-        if (snapshot.hasData) {
-          print(snapshot.data);
-
-          if (snapshot.hasData && snapshot.data['isOpen']) {
-            _widget = LoadingScreen(
-              title: snapshot.data['title'],
-              text: snapshot.data['text'],
-              size: snapshot.data['size'],
-              showIcon: snapshot.data['showIcon'],
-              showSuccessIcon: snapshot.data['showSuccessIcon'],
-            );
-          } else if (snapshot.data['isSigningOut']) {
-            _widget = LoadingScreen(title: 'Signing You Out', showIcon: false);
-          }
-        } else {
-          _widget = Scaffold(
-            backgroundColor: Colors.white,
-            appBar: null,
-            body: OrientationBuilder(
-              builder: (context, orientation) {
-                return SingleChildScrollView(
-                  child: Container(
-                    height: size.height,
-                    child: Form(
-                      child: PageView(
-                        controller: _pageController,
-                        physics: NeverScrollableScrollPhysics(),
-                        onPageChanged: (int pageIndex) {
-                          setState(
-                            () {
-                              _currentStep = _steps[pageIndex];
-                              _currentPage = pageIndex;
-                            },
-                          );
-                        },
-                        children: <Widget>[
-                          EmailAndUsernameStep(
-                            key: new PageStorageKey('emailAndUsername'),
-                            usernameTextController: usernameController,
-                            emailTextController: emailController,
-                            pageController: _pageController,
-                            emailAndUsername: _emailAndUsername,
-                            email: _email,
-                            username: _username,
-                            errors: _emailAndUsername.errors,
-                            submitting: _submitting,
-                            handleOnChanged: _handleInputOnChanged,
-                            handleOnSubmit: _handleFormSubmission,
-                          ),
-                          PasswordsStep(
-                            key: new PageStorageKey('passwords'),
-                            pageController: _pageController,
-                            password: _password,
-                            confirmPassword: _confirmPassword,
-                            // passwords: _passwords,
-                            submitting: _submitting,
-                            handleOnChanged: _handleInputOnChanged,
-                            handleOnSubmit: _handleFormSubmission,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                );
-              },
-            ),
+    return StoreConnector<AppState, AppState>(
+      converter: (store) => store.state,
+      builder: (context, state) {
+        if (state.loadingState.isOpen) {
+          return LoadingScreen(
+            title: state.loadingState.title,
+            text: state.loadingState.text,
+            showIcon: state.loadingState.showIcon,
           );
         }
 
-        return _widget;
+        return Scaffold(
+          backgroundColor: Colors.white,
+          appBar: null,
+          body: OrientationBuilder(
+            builder: (context, orientation) {
+              return Container(
+                height: size.height,
+                child: Form(
+                  child: PageView(
+                    controller: _pageController,
+                    physics: NeverScrollableScrollPhysics(),
+                    onPageChanged: (int pageIndex) {
+                      setState(
+                        () {
+                          _currentStep = _steps[pageIndex];
+                          _currentPage = pageIndex;
+                        },
+                      );
+                    },
+                    children: <Widget>[
+                      EmailAndUsernameStep(
+                        key: new PageStorageKey('emailAndUsername'),
+                        usernameTextController: usernameController,
+                        emailTextController: emailController,
+                        pageController: _pageController,
+                        emailAndUsername: _emailAndUsername,
+                        email: _email,
+                        username: _username,
+                        errors: _emailAndUsername.errors,
+                        submitting: _submitting,
+                        handleOnChanged: _handleInputOnChanged,
+                        handleOnSubmit: _handleFormSubmission,
+                      ),
+                      PasswordsStep(
+                        key: new PageStorageKey('passwords'),
+                        pageController: _pageController,
+                        password: _password,
+                        confirmPassword: _confirmPassword,
+                        // passwords: _passwords,
+                        submitting: _submitting,
+                        handleOnChanged: _handleInputOnChanged,
+                        handleOnSubmit: _handleFormSubmission,
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        );
       },
     );
   }

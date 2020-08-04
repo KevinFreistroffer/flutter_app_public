@@ -16,7 +16,7 @@ import '../../widgets/AppBars/signed_in_app_bar.dart';
 import '../../error_dialog.dart';
 import '../../wait.dart';
 import '../../styles/ErrorDialog.dart';
-import '../../state/user_model.dart';
+import '../../models/user_model.dart';
 
 class CreateANickname extends StatefulWidget {
   CreateANickname({Key key}) : super(key: key);

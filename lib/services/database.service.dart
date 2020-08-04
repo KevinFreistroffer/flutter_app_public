@@ -42,7 +42,6 @@ class DatabaseService {
   }
 
   Future<dynamic> getUserWithEmail(String email) async {
-    print('getUserWithEmail ${email.trim()}');
     dynamic result;
 
     try {
@@ -52,8 +51,6 @@ class DatabaseService {
           .snapshots()
           .firstWhere((snapshot) => snapshot == snapshot);
 
-      print('snapshot $snapshot ${snapshot.documents}');
-
       result = snapshot.documents.length > 0 ? snapshot.documents[0] : null;
     } catch (error) {
       print('An error occurred in DatabaseService getUserWithEmail() $error');
@@ -62,8 +59,6 @@ class DatabaseService {
         result = Constants.ERROR_NETWORK_REQUEST_FAILED; // Should be a constant
       }
     }
-
-    print('result $result');
 
     return result;
   }

@@ -28,7 +28,6 @@ class SubmitButton extends StatefulWidget {
 class _SubmitButtonState extends State<SubmitButton> {
   @override
   void didUpdateWidget(SubmitButton oldWidget) {
-    print('didUpdateWidget oldWidget $oldWidget');
     // TODO: implement didUpdateWidget
     super.didUpdateWidget(oldWidget);
   }

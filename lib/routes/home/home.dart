@@ -8,21 +8,24 @@ import 'package:provider/provider.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_redux/flutter_redux.dart';
-import '../../services/database.service.dart';
-import '../../services/authentication.service.dart';
-import '../../services/loading.service.dart';
-import './styles.dart';
-import '../../constants.dart';
-import '../../widgets/loading_screen/LoadingScreen.dart';
-import '../../globals.dart';
-import '../../theme.dart';
-import '../../error_dialog.dart';
-import '../../wait.dart';
-import '../../state/user_model.dart';
-import '../../models/app_state.dart';
-import '../../models/loading_state.dart';
-import '../../store.dart';
-import '../../actions/loading_actions.dart';
+import 'package:redux/redux.dart';
+import 'package:flutter_keto/services/database.service.dart';
+import 'package:flutter_keto/services/authentication.service.dart';
+import 'package:flutter_keto/services/loading.service.dart';
+import 'package:flutter_keto/routes/home/styles.dart';
+import 'package:flutter_keto/constants.dart';
+import 'package:flutter_keto/widgets/loading_screen/LoadingScreen.dart';
+import 'package:flutter_keto/globals.dart';
+import 'package:flutter_keto/theme.dart';
+import 'package:flutter_keto/error_dialog.dart';
+import 'package:flutter_keto/wait.dart';
+import 'package:flutter_keto/models/user_model.dart';
+import 'package:flutter_keto/state/app_state.dart';
+import 'package:flutter_keto/state/user_state.dart';
+import 'package:flutter_keto/state/loading_state.dart';
+import 'package:flutter_keto/store.dart';
+import 'package:flutter_keto/actions/loading_actions.dart';
+import 'package:flutter_keto/actions/user_actions.dart';
 
 class Home extends StatefulWidget {
   Home({Key key}) : super(key: key);
@@ -36,7 +39,6 @@ class _HomeState extends State<Home> {
   final AuthenticationService _authService = AuthenticationService();
   final DatabaseService _databaseService = DatabaseService();
   final LoadingService _loadingService = new LoadingService();
-  UserModel _userModel;
   bool _fadeInTitle = false;
   bool _fadeInButton1 = false;
   bool _fadeInButton2 = false;
@@ -56,29 +58,29 @@ class _HomeState extends State<Home> {
   @override
   void initState() {
     super.initState();
-    _googleSignIn.onCurrentUserChanged.listen((GoogleSignInAccount account) {
-      print('googleSignIn.onCurrentUserChanged account $account');
-    }).onError((error) {
-      print('googleSignIn.onCurrentUserChanged error $error');
-    });
-    _userModel = Provider.of<UserModel>(context, listen: false);
-    // _loadingService.add(isOpen: true);
-
     FirebaseAuth.instance.currentUser().then((firebaseUser) async {
       if (firebaseUser != null) {
-        _userModel.set(uid: firebaseUser.uid);
+        // Set the UID in the store
+        // store.dispatch(
+        //   SetUserValuesAction(uid: firebaseUser.uid),
+        // );
 
-        final storedUser =
-            await _databaseService.getUserWithUID(firebaseUser.uid);
+        final storedUser = await _databaseService.getUserWithUID(
+          firebaseUser.uid,
+        );
 
+        // If a user exists in the database with the UID, then add the rest
+        // of the users data in the store
         if (storedUser is DocumentSnapshot) {
-          _userModel.set(
-            email: storedUser.data['email'],
-            username: storedUser.data['username'],
-            nickname: storedUser.data['nickname'],
-            phoneNumber: storedUser.data['phoneNumber'],
-            platform: storedUser.data['platform'] ?? Constants.GOOGLE,
-          );
+          // store.dispatch(
+          //   SetUserValuesAction(
+          //     email: storedUser.data['email'],
+          //     username: storedUser.data['username'],
+          //     nickname: storedUser.data['nickname'],
+          //     phoneNumber: storedUser.data['phoneNumber'],
+          //     platform: storedUser.data['platform'] ?? Constants.GOOGLE,
+          //   ),
+          // );
         }
 
         Navigator.pushNamedAndRemoveUntil(
@@ -124,20 +126,24 @@ class _HomeState extends State<Home> {
               await _databaseService.getUserWithUID(firebaseUser.uid);
 
           if (storedUser is DocumentSnapshot) {
-            _userModel.set(
-              uid: firebaseUser.uid,
-              email: storedUser.data['email'],
-              username: storedUser.data['username'],
-              nickname: storedUser.data['nickname'],
-              phoneNumber: storedUser.data['phoneNumber'],
-              platform: storedUser.data['platform'] ?? Constants.GOOGLE,
+            store.dispatch(
+              SetUserValuesAction(
+                uid: firebaseUser.uid,
+                email: storedUser.data['email'],
+                username: storedUser.data['username'],
+                nickname: storedUser.data['nickname'],
+                phoneNumber: storedUser.data['phoneNumber'],
+                platform: storedUser.data['platform'] ?? Constants.GOOGLE,
+              ),
             );
           }
 
-          _userModel.set(
-            uid: firebaseUser.uid,
-            email: firebaseUser.email,
-            platform: Constants.GOOGLE,
+          store.dispatch(
+            SetUserValuesAction(
+              uid: firebaseUser.uid,
+              email: firebaseUser.email,
+              platform: Constants.GOOGLE,
+            ),
           );
 
           await wait(ms: 1800);
@@ -252,20 +258,12 @@ class _HomeState extends State<Home> {
   Widget build(BuildContext context) {
     final Size size = MediaQuery.of(context).size;
     AppTheme theme = Provider.of(context, listen: false);
-    var store = StoreProvider.of<AppState>(context);
 
     return StoreConnector<AppState, AppState>(
       converter: (store) => store.state,
       builder: (context, state) {
-        print('Home state ${state.loadingState}');
-
         if (state.loadingState.isOpen) {
-          return Text(
-            'abcdefg',
-            style: TextStyle(
-              color: Colors.red,
-            ),
-          );
+          return LoadingScreen(title: '', showIcon: true);
         } else {
           return MaterialApp(
             builder: (BuildContext context, widget) {
@@ -278,186 +276,195 @@ class _HomeState extends State<Home> {
                       //padding: EdgeInsets.all(16),
                       width: size.width,
                       height: size.height,
-                      constraints: BoxConstraints(minHeight: 200),
-                      color: theme.background,
+                      color: Colors.white,
+                      // constraints: BoxConstraints(minHeight: 200),
+                      // color: Colors.white,
                       child: SingleChildScrollView(
-                        child: Stack(
-                          children: <Widget>[
-                            // Positioned.fill(
-                            //   child: Image(
-                            //     image: AssetImage('assets/bedroom.jpg'),
-                            //   ),
-                            // ),
-                            Positioned.fill(
-                              child: BackdropFilter(
-                                filter: ImageFilter.blur(
-                                  sigmaX: 5,
-                                  sigmaY: 5,
-                                ),
-                                child: Container(
-                                  color: Colors.blue.withOpacity(0.7),
-                                ),
-                              ),
-                            ),
-                            Column(
-                              mainAxisAlignment: MainAxisAlignment.spaceAround,
-                              children: <Widget>[
-                                Container(
-                                  height: size.height * .3,
-                                  //padding: EdgeInsets.all(20),
-                                  width: size.width * .9,
-                                  child: AnimatedOpacity(
-                                    duration: Duration(milliseconds: 607),
-                                    opacity: _fadeInTitle ? 1.0 : 0.0,
-                                    child: Center(
-                                      child: Column(
-                                        children: <Widget>[
-                                          SizedBox(height: size.height * .1),
-                                          // Icon(
-                                          //   Icons.account_circle,
-                                          //   size: 150.0,
-                                          //   color: theme.onBackground
-                                          //       .withOpacity(0.25),
-                                          // ),
-                                          Text(Constants.APP_NAME,
+                        child: Container(
+                          height: size.height,
+                          child: Stack(
+                            children: <Widget>[
+                              // Positioned.fill(
+                              //   child: BackdropFilter(
+                              //     filter: ImageFilter.blur(
+                              //       sigmaX: 5,
+                              //       sigmaY: 5,
+                              //     ),
+                              //     child: Image(
+                              //       fit: BoxFit.cover,
+                              //       image: AssetImage('assets/green_water.jpg'),
+                              //     ),
+                              //   ),
+                              // ),
+                              Column(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceAround,
+                                mainAxisSize: MainAxisSize.min,
+                                children: <Widget>[
+                                  Flexible(
+                                    fit: FlexFit.loose,
+                                    child: AnimatedOpacity(
+                                      duration: Duration(milliseconds: 607),
+                                      opacity: _fadeInTitle ? 1.0 : 0.0,
+                                      child: Center(
+                                        child: Column(
+                                          children: <Widget>[
+                                            SizedBox(height: size.height * .1),
+                                            // Icon(
+                                            //   Icons.account_circle,
+                                            //   size: 150.0,
+                                            //   color: theme.onBackground
+                                            //       .withOpacity(0.25),
+                                            // ),
+                                            Text(
+                                              Constants.APP_NAME,
                                               style: GoogleFonts.notoSans(
-                                                  fontSize: size.width * .075,
-                                                  fontWeight: FontWeight.bold,
-                                                  color: theme.onBackground)),
-                                        ],
+                                                fontSize: size.width * .075,
+                                                fontWeight: FontWeight.bold,
+                                                color: Colors.black,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
                                       ),
                                     ),
                                   ),
-                                ),
-                                SizedBox(height: 32),
-                                /**
+                                  SizedBox(height: 32),
+                                  /**
                              * ideally it is split 50 50 or something.
                              * ideally there's a minimum height of the container
                              * ideally the title height is say 30% of the total 
                              * ideally the links are height of 70% column mainAxisAlignment.bottom
                              */
-                                Container(
-                                  height: orientation == Orientation.portrait
-                                      ? size.height * .7
-                                      : 300,
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: <Widget>[
-                                      AnimatedOpacity(
-                                        duration: Duration(milliseconds: 715),
-                                        opacity: _fadeInButton1 ? 1.0 : 0.0,
-                                        child: RaisedButton(
-                                          color: Colors.transparent,
-                                          onPressed: () => Navigator.pushNamed(
-                                              context, '/signup'),
-                                          child: Text(
-                                            'SIGN UP FOR FREE',
-                                            style: TextStyle(
-                                              fontSize: orientation ==
-                                                      Orientation.portrait
-                                                  ? size.width * .045
-                                                  : 24,
-                                              fontWeight: FontWeight.w300,
-                                              color: theme.onBackground,
+                                  Container(
+                                    height: orientation == Orientation.portrait
+                                        ? size.height * .5
+                                        : 300,
+                                    child: Column(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: <Widget>[
+                                        AnimatedOpacity(
+                                          duration: Duration(milliseconds: 715),
+                                          opacity: _fadeInButton1 ? 1.0 : 0.0,
+                                          child: GestureDetector(
+                                            onTap: () => Navigator.pushNamed(
+                                                context, '/signup'),
+                                            child: Text(
+                                              'SIGN UP FOR FREE',
+                                              style: TextStyle(
+                                                fontSize: orientation ==
+                                                        Orientation.portrait
+                                                    ? size.width * .05
+                                                    : 24,
+                                                fontWeight: FontWeight.w300,
+                                                color: Colors.black,
+                                              ),
                                             ),
                                           ),
                                         ),
-                                      ),
-                                      SizedBox(height: 8),
-                                      AnimatedOpacity(
-                                        duration: Duration(milliseconds: 715),
-                                        opacity: _fadeInButton2 ? 1.0 : 0.0,
-                                        child: Container(
-                                          width: size.width,
-                                          color: Colors.transparent,
-                                          child: RaisedButton.icon(
-                                            padding: EdgeInsets.all(18),
-                                            color: Colors.black.withOpacity(0),
-                                            icon: Container(
-                                              margin: EdgeInsets.only(right: 5),
-                                              child: Image(
-                                                width: orientation ==
-                                                        Orientation.portrait
-                                                    ? size.width * .045
-                                                    : 24,
-                                                height: orientation ==
-                                                        Orientation.portrait
-                                                    ? size.width * .045
-                                                    : 24,
-                                                image: AssetImage(
-                                                  'assets/google_logo.png',
-                                                ),
-                                              ),
-                                            ),
-                                            label: Center(
-                                              child: Text(
-                                                'CONTINUE WITH GOOGLE',
-                                                style: TextStyle(
-                                                  fontSize: orientation ==
-                                                          Orientation.portrait
-                                                      ? size.width * .05
-                                                      : 24,
-                                                  fontWeight: FontWeight.w300,
-                                                  color: theme.onBackground,
-                                                ),
-                                              ),
-                                            ),
-                                            onPressed: () {
-                                              print(
-                                                  'Home Sign In With Google onPressed()');
-                                              _handleSignInWithGoogle();
-                                            },
-                                          ),
-                                        ),
-                                      ),
-                                      SizedBox(height: 8),
-                                      AnimatedOpacity(
-                                        duration: Duration(milliseconds: 500),
-                                        opacity: _fadeInLogin ? 1.0 : 0.0,
-                                        child: Container(
-                                          width: size.width,
-                                          constraints: BoxConstraints(
-                                            maxWidth: 290,
-                                          ),
-                                          child: Container(
-                                            padding: EdgeInsets.only(
-                                              top: 0,
-                                            ),
-                                            child: GestureDetector(
-                                              onTap: () => Navigator.pushNamed(
-                                                context,
-                                                '/login',
-                                              ),
-                                              child: Row(
-                                                mainAxisAlignment:
-                                                    MainAxisAlignment.center,
-                                                children: <Widget>[
-                                                  Text(
-                                                    'LOGIN',
-                                                    style: TextStyle(
-                                                      //fontSize: 18,
-                                                      fontSize: orientation ==
-                                                              Orientation
-                                                                  .portrait
-                                                          ? size.width * .045
-                                                          : 24,
-                                                      fontWeight:
-                                                          FontWeight.w300,
-                                                      color: theme.onBackground,
-                                                    ),
+                                        SizedBox(height: 24),
+                                        AnimatedOpacity(
+                                          duration: Duration(milliseconds: 715),
+                                          opacity: _fadeInButton2 ? 1.0 : 0.0,
+                                          child: Row(
+                                            children: <Widget>[
+                                              Expanded(
+                                                child: GestureDetector(
+                                                  child: Row(
+                                                    mainAxisAlignment:
+                                                        MainAxisAlignment
+                                                            .center,
+                                                    children: <Widget>[
+                                                      Image(
+                                                        width: orientation ==
+                                                                Orientation
+                                                                    .portrait
+                                                            ? size.width * .045
+                                                            : 24,
+                                                        height: orientation ==
+                                                                Orientation
+                                                                    .portrait
+                                                            ? size.width * .045
+                                                            : 24,
+                                                        image: AssetImage(
+                                                          'assets/google_logo.png',
+                                                        ),
+                                                      ),
+                                                      SizedBox(width: 16),
+                                                      Text(
+                                                        'CONTINUE WITH GOOGLE',
+                                                        style: TextStyle(
+                                                          fontSize: orientation ==
+                                                                  Orientation
+                                                                      .portrait
+                                                              ? size.width * .05
+                                                              : 24,
+                                                          fontWeight:
+                                                              FontWeight.w300,
+                                                          color: Colors.black,
+                                                        ),
+                                                      ),
+                                                    ],
                                                   ),
-                                                ],
+                                                  onTap: () {
+                                                    _handleSignInWithGoogle();
+                                                  },
+                                                ),
+                                              )
+                                            ],
+                                          ),
+                                        ),
+                                        SizedBox(height: 24),
+                                        AnimatedOpacity(
+                                          duration: Duration(milliseconds: 500),
+                                          opacity: _fadeInLogin ? 1.0 : 0.0,
+                                          child: Container(
+                                            width: size.width,
+                                            constraints: BoxConstraints(
+                                              maxWidth: 290,
+                                            ),
+                                            child: Container(
+                                              padding: EdgeInsets.only(
+                                                top: 0,
+                                              ),
+                                              child: GestureDetector(
+                                                onTap: () =>
+                                                    Navigator.pushNamed(
+                                                  context,
+                                                  '/login',
+                                                ),
+                                                child: Row(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment.center,
+                                                  children: <Widget>[
+                                                    Text(
+                                                      'LOGIN',
+                                                      style: TextStyle(
+                                                        //fontSize: 18,
+                                                        fontSize: orientation ==
+                                                                Orientation
+                                                                    .portrait
+                                                            ? size.width * .045
+                                                            : 24,
+                                                        fontWeight:
+                                                            FontWeight.w300,
+                                                        color: Colors.black,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
                                               ),
                                             ),
                                           ),
                                         ),
-                                      ),
-                                    ],
+                                      ],
+                                    ),
                                   ),
-                                ),
-                              ],
-                            ),
-                          ],
+                                ],
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     );

@@ -21,7 +21,6 @@ class CoordinatesModel extends ChangeNotifier {
     double latitude,
     double longitude,
   }) {
-    print('coordinatesModel.set() $latitude, $longitude');
     _latitude = latitude ?? _latitude;
     _longitude = longitude ?? _longitude;
 

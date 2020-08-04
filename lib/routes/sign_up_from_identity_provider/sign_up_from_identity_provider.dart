@@ -8,7 +8,7 @@ import '../../constants.dart';
 import '../../theme.dart';
 import '../../widgets/submit_button.dart';
 import '../../widgets/loading_screen/LoadingScreen.dart';
-import '../../state/user_model.dart';
+import '../../models/user_model.dart';
 
 class SignUpFromIdentityProvider extends StatefulWidget {
   SignUpFromIdentityProvider({Key key}) : super(key: key);

@@ -7,7 +7,7 @@ import '../../services/authentication.service.dart';
 import '../../services/database.service.dart';
 import '../../services/storage.service.dart';
 import './styles.dart';
-import '../../state/user_model.dart';
+import '../../models/user_model.dart';
 import '../../error_dialog.dart';
 
 class EnterSMSCode extends StatefulWidget {

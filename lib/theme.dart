@@ -65,10 +65,43 @@ class AppTheme {
       cursorColor: primaryVariant,
       appBarTheme: AppBarTheme(
         textTheme: TextTheme(
+          headline1: GoogleFonts.notoSans(
+            textStyle: TextStyle(
+              letterSpacing: -0.5,
+              color: onPrimary,
+            ),
+          ),
+          headline2: GoogleFonts.notoSans(
+            textStyle: TextStyle(
+              letterSpacing: -0.5,
+              color: onPrimary,
+            ),
+          ),
+          headline3: GoogleFonts.notoSans(
+            textStyle: TextStyle(
+              letterSpacing: -0.5,
+              color: onPrimary,
+            ),
+          ),
+          headline4: GoogleFonts.notoSans(
+            textStyle: TextStyle(
+              letterSpacing: -0.5,
+              color: onPrimary,
+            ),
+          ),
+          headline5: GoogleFonts.notoSans(
+            fontSize: 22,
+            textStyle: TextStyle(
+              letterSpacing: -0.5,
+              color: onPrimary,
+            ),
+          ),
           headline6: GoogleFonts.notoSans(
             textStyle: TextStyle(
-              fontSize: 20.0,
-              color: onPrimary.withOpacity(0.95),
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              letterSpacing: -0.5,
+              color: onPrimary,
             ),
           ),
         ),

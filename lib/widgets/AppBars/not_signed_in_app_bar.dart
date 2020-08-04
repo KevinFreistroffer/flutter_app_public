@@ -7,7 +7,7 @@ import '../../services/authentication.service.dart';
 import '../../constants.dart';
 import '../../wait.dart';
 import '../../theme.dart';
-import '../../state/user_model.dart';
+import '../../models/user_model.dart';
 
 class NotSignedInAppBar extends StatefulWidget implements PreferredSizeWidget {
   final String title;

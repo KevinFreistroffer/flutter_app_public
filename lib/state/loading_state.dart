@@ -29,20 +29,6 @@ class LoadingState {
     );
   }
 
-  @override
-  toString() {
-    var str = '';
-
-    str += 'SetLoadingAction \n';
-    str += '{ isOpen: $isOpen, \n';
-    str += 'title: $title, \n';
-    str += 'text: $text, \n';
-    str += 'showIcon: $showIcon, \n';
-    str += ' }';
-
-    return str;
-  }
-
   factory LoadingState.initial() {
     return LoadingState(
       isOpen: false,

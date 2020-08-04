@@ -63,7 +63,9 @@ class StorageService {
           }
         }
       } catch (error) {
-        print(error);
+        print(
+          'An error occurred in StorageService setIfDoesNotExist error $error',
+        );
       }
     }
   }

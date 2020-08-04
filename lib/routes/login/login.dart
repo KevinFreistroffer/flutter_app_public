@@ -18,7 +18,7 @@ import '../../services/loading.service.dart';
 import '../../widgets/submit_button.dart';
 import '../../theme.dart';
 import 'styles.dart';
-import '../../state/user_model.dart';
+import '../../models/user_model.dart';
 import '../../error_dialog.dart';
 import '../../form_control.dart';
 

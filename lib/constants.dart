@@ -102,10 +102,22 @@ class Constants {
   static const String SSH_DISCONNECTED = 'Disconnected';
   static const String LOCATION_NOT_AVAILABLE = 'N/A';
   static const String SSH_CONNECT_SUCCESS = 'session_connected';
+  static const String ERROR_SSH_CONNECTION_REFUSED =
+      'Connection refused. Make sure the Raspberry Pi and this device are on the same network.';
+  static const String ERROR_SSH_NETWORK_UNREACHABLE =
+      'Network is unreachable. Please make sure your Raspberry Pi and this device are on the same network.';
+  static const String ERROR_SSH_CONNECTION_ABORTED =
+      'The connection was aborted. Please Make sure the Raspberry PI and this device are on the same network.';
+  static const String ERROR_SSH_SOFTWARE_CAUSED_CONNECTION_ABORT =
+      'The connection was aborted by this application. Sorry, please make sure the Raspberry PI and this device are on the same network, and try again.';
+  static const String ERROR_SSH_GENERIC =
+      'An error occurred. Please make sure the Raspberry PI and this device are on the same network, and try again.';
 
   static const String SCRIPT_RUNNING = 'Script Running';
   static const String SCRIPT_NOT_RUNNING = 'Script Not Running';
   static const String SCRIPT_COMPLETED = 'COMPLETED';
+  static const String SCRIPT_EXITED = 'EXITED';
+  static const String ERROR_SCRIPT_SESSION_IS_DOWN = 'Session is down';
 
   static const String PI_SCRIPT_DIRECTORY =
       '/home/pi/.local/share/applications';

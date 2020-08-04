@@ -33,8 +33,6 @@ class SunTracking {
         desiredAccuracy: geoloc.LocationAccuracy.high,
       );
 
-      print(_position);
-
       _latitude = _position.latitude;
       _longitude = _position.longitude;
 
@@ -63,7 +61,7 @@ class SunTracking {
     }
   }
 
-  Future<void> setSolarValues() async {
+  Future<void> SetSolarValuesAction() async {
     // var output = spaCalculate(SPAParams(
     //   time: DateTime.now(),
     //   longitude: _longitude,

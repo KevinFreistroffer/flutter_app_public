@@ -5,7 +5,7 @@ import '../../../services/loading.service.dart';
 import '../../../services/authentication.service.dart';
 import '../../../constants.dart';
 import '../../../theme.dart';
-import '../../../state/user_model.dart';
+import '../../../models/user_model.dart';
 import '../../../wait.dart';
 
 class CustomAppBar extends StatelessWidget {

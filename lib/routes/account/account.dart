@@ -9,8 +9,9 @@ import '../../widgets/AppBars/signed_in_app_bar.dart';
 import '../../widgets/submit_button.dart';
 import '../../widgets/loading_screen/LoadingScreen.dart';
 import '../../theme.dart';
-import '../../state/user_model.dart';
 import '../../routes/home/home.dart';
+import '../../models/times_model.dart';
+import '../../models/user_model.dart';
 import 'styles.dart';
 
 class Account extends StatefulWidget {
@@ -23,8 +24,8 @@ class Account extends StatefulWidget {
 class _AccountState extends State<Account> {
   final AuthenticationService _authService = AuthenticationService();
   final LoadingService _loadingService = LoadingService();
-  bool _submitting = false;
   UserModel _userModel;
+  bool _submitting = false;
 
   @override
   void initState() {
@@ -34,7 +35,7 @@ class _AccountState extends State<Account> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _userModel = Provider.of<UserModel>(context);
+    _userModel = Provider.of(context);
   }
 
   Future<void> _sendPasswordResetEmail(context) async {
@@ -54,7 +55,6 @@ class _AccountState extends State<Account> {
   }
 
   Future<void> _deleteAccount() async {
-    print('deleteAccount');
     final FirebaseUser firebaseUser = await FirebaseAuth.instance.currentUser();
     firebaseUser.delete();
     _userModel.emptyAllValues();

@@ -2,9 +2,9 @@ import 'package:meta/meta.dart';
 
 @immutable
 class TimesState {
-  final double sunrise;
-  final double sunset;
-  final double dayLength;
+  final DateTime sunrise;
+  final DateTime sunset;
+  final int dayLength;
 
   TimesState({
     @required this.sunrise,

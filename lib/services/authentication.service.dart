@@ -30,8 +30,6 @@ class AuthenticationService {
     AuthCredential authCredential;
     GoogleSignInAccount signInResponse = await googleSignIn();
 
-    print('signInResponse $signInResponse');
-
     // Shouldn't have to check because the function is expecting to return this type
     // and the value type is already set to expect to be of GoogleSignInAccount
     if (signInResponse is GoogleSignInAccount) {
@@ -234,7 +232,7 @@ class AuthenticationService {
   }
 
   void verificationFailedCallback(error) {
-    print(error.message);
+    print('authenticationService verificationFailedCallback() error $error');
 
     if (error is AuthException) {
       addToPhoneAuthenticationStream(

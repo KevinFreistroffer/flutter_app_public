@@ -32,7 +32,7 @@ class Connection extends StatelessWidget {
   }) : super(key: key);
 
   // Future<void> _connect() async {
-  //   var connectionResponse = await _raspberryPiService.connectToClient();
+  //   var connectionResponse = await _RPiService.connectToClient();
   //   print('connection.dart _connect() connectionResponse: $connectionResponse');
 
   //   if (connectionResponse == Constants.SSH_CONNECT_SUCCESS) {

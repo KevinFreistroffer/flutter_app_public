@@ -17,7 +17,7 @@ import './styles.dart';
 import '../../wait.dart';
 import '../../error_dialog.dart';
 
-import '../../state/user_model.dart';
+import '../../models/user_model.dart';
 
 class VerifyPhone extends StatefulWidget {
   VerifyPhone({Key key}) : super(key: key);

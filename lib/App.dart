@@ -18,8 +18,10 @@ import 'routes/enter_sms_code/enter_sms_code.dart';
 import 'routes/animated_screen/animated_screen.dart';
 import 'routes/password_reset/password_reset.dart';
 import 'routes/verify_phone/verify_phone.dart';
-import './models/app_state.dart';
+import 'routes/auto_start/auto_start.dart';
+import './state/app_state.dart';
 import './theme.dart';
+import 'package:flutter_keto/route_observer.dart';
 
 class App extends StatelessWidget {
   final String initialRoute;
@@ -98,6 +100,7 @@ class App extends StatelessWidget {
             '/signup-from-identity-provider': (BuildContext context) =>
                 SignUpFromIdentityProvider(),
             '/dashboard': (BuildContext context) => Dashboard(),
+            '/auto-start': (BuildContext context) => AutoStart(),
             '/status': (BuildContext context) => Status(),
             '/create-a-nickname': (BuildContext context) => CreateANickname(),
             '/account': (BuildContext context) => Account(),
@@ -109,6 +112,7 @@ class App extends StatelessWidget {
               Theme.of(context).textTheme,
             ),
           ),
+          navigatorObservers: [routeObserver],
         ),
       ),
     );

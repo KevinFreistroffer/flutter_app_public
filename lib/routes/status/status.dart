@@ -23,7 +23,7 @@ import '../../error_dialog.dart';
 import './styles.dart';
 import '../../theme.dart';
 import '../../wait.dart';
-import '../../state/user_model.dart';
+import '../../models/user_model.dart';
 import '../../__private_config__.dart';
 import '../../sun_tracking_files/sun_tracking.dart';
 import '../../sun_tracking_files/tilt.dart';
@@ -42,7 +42,7 @@ class _StatusState extends State<Status> with TickerProviderStateMixin {
   final DatabaseService _databaseService = DatabaseService();
   final StorageService _storageService = StorageService();
   final LoadingService _loadingService = LoadingService();
-  final RaspberryPiService _raspberryPiService = RaspberryPiService();
+  final RPiService _RPiService = RPiService();
   final PositionService _positionService = PositionService();
   final SolarService _solarService = SolarService();
 
@@ -83,7 +83,7 @@ class _StatusState extends State<Status> with TickerProviderStateMixin {
       _sshStatus = Constants.SSH_CONNECTING;
     });
     try {
-      final connected = await _raspberryPiService.connect();
+      final connected = await _RPiService.connect();
       if (connected is String) {
         setState(() => _sshStatus = Constants.SSH_CONNECTED);
       } else {}
@@ -99,7 +99,7 @@ class _StatusState extends State<Status> with TickerProviderStateMixin {
   }
 
   _disconnectClient() {
-    _raspberryPiService.disconnect();
+    _RPiService.disconnect();
     setState(() {
       _sshStatus = Constants.SSH_DISCONNECTED;
       _currentPosition = null;
@@ -122,11 +122,11 @@ class _StatusState extends State<Status> with TickerProviderStateMixin {
   Future<void> _executePythonScript() async {
     try {
       final success = await client.execute('python python2.py');
-      print(success.toUpperCase());
 
       setState(() => _pythonResponse = success);
     } catch (error) {
-      print(error.toString().toUpperCase());
+      print(
+          'An error occurred in status.dart executePythonScript() error $error');
       setState(() => _pythonResponse = error.toString());
     }
   }
@@ -295,16 +295,12 @@ class _StatusState extends State<Status> with TickerProviderStateMixin {
                                   children: <Widget>[
                                     GestureDetector(
                                       onTap: () async {
-                                        print(
-                                            'Status onTap() $_sshStatus $_connectingToClient');
                                         if (_connectingToClient) {
                                           return null;
                                         } else if (_sshStatus ==
                                             Constants.SSH_DISCONNECTED) {
                                           _sshToRaspberryPi();
                                         } else {
-                                          print(
-                                              '_sshStatus is Connected, calling _disconnectClient()');
                                           _disconnectClient();
                                         }
                                       },

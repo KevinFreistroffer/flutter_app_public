@@ -92,6 +92,10 @@ dependencies:
 
   redux: ^4.0.0
 
+  redux_thunk: ^0.3.0
+
+  flutter_compass: ^0.4.1
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -116,6 +120,7 @@ flutter:
     - white.jpg
     - google_logo.png
     - sun.jpg
+    - compass.jpg
   #  - images/a_dot_ham.jpeg
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware.

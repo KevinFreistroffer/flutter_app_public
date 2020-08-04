@@ -1,13 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_keto/actions/raspberry_pi_actions.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../../services/loading.service.dart';
-import '../../services/storage.service.dart';
-import '../../services/authentication.service.dart';
-import '../../constants.dart';
-import '../../wait.dart';
-import '../../theme.dart';
-import '../../state/user_model.dart';
+import 'package:flutter_redux/flutter_redux.dart';
+import 'package:flutter_keto/services/loading.service.dart';
+import 'package:flutter_keto/services/storage.service.dart';
+import 'package:flutter_keto/services/authentication.service.dart';
+import 'package:flutter_keto/constants.dart';
+import 'package:flutter_keto/wait.dart';
+import 'package:flutter_keto/theme.dart';
+import 'package:flutter_keto/state/app_state.dart';
+import 'package:flutter_keto/state/user_state.dart';
+import 'package:flutter_keto/actions/user_actions.dart';
+import 'package:flutter_keto/store.dart';
 
 class SignedInAppBar extends StatefulWidget implements PreferredSizeWidget {
   final String title;
@@ -41,7 +46,6 @@ class _SignedInAppBarState extends State<SignedInAppBar> {
   final StorageService _storageService = StorageService();
   final LoadingService _loadingService = LoadingService();
   final List menuItems = [];
-  UserModel _userModel;
   String username;
 
   @override
@@ -53,26 +57,25 @@ class _SignedInAppBarState extends State<SignedInAppBar> {
   void didChangeDependencies() {
     // TODO: implement didChangeDependencies
     super.didChangeDependencies();
-    _userModel = Provider.of<UserModel>(context, listen: false);
   }
 
   @override
   Widget build(BuildContext context) {
     final AppTheme theme = Provider.of<AppTheme>(context);
-    final UserModel userModel = Provider.of<UserModel>(context);
 
-    return Consumer<UserModel>(
-      builder: (context, value, child) {
+    return StoreConnector<AppState, AppState>(
+      converter: (store) => store.state,
+      builder: (context, state) {
         return AppBar(
           backgroundColor: Colors.white,
           //backgroundColor: widget.backgroundColor,
+          iconTheme: IconThemeData(
+            color: Colors.black,
+          ),
           automaticallyImplyLeading: widget.automaticallyImplyLeading,
           title: Text(
             widget.title,
-            style: GoogleFonts.notoSans(
-              color: Colors.black,
-              fontWeight: FontWeight.bold,
-            ),
+            style: Theme.of(context).textTheme.headline6,
           ),
           bottom: widget.bottom ?? null,
           elevation: widget.elevation ?? null,
@@ -91,7 +94,29 @@ class _SignedInAppBarState extends State<SignedInAppBar> {
                       break;
                     case Constants.SIGN_OUT:
                       _loadingService.add(isOpen: true, isSigningOut: true);
-                      userModel.emptyAllValues();
+                      store.dispatch(
+                        EmptyUserValuesAction(
+                            uid: '',
+                            email: '',
+                            username: '',
+                            nickname: '',
+                            phoneNumber: '',
+                            platform: ''),
+                      );
+                      store.dispatch(
+                        SetSSHStatusAction(
+                            sshStatus: Constants.SSH_DISCONNECTED),
+                      );
+                      store.dispatch(
+                          SetScriptStatusAction(scriptRunning: false));
+                      store.dispatch(
+                        SetAutoStartValuesAction(
+                          autoStart: false,
+                          autoStartTime: null,
+                          autoStartAtSunrise: false,
+                          autoStartTimeAsString: '',
+                        ),
+                      );
                       _authService.signOut();
                       await wait(s: 2);
                       _loadingService.add(isOpen: false);

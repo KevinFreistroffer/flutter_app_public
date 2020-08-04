@@ -1,41 +1,76 @@
-import 'dart:math' as math;
-import 'package:geolocator/geolocator.dart';
-import 'package:intl/intl.dart';
 import 'package:flutter_suncalc/flutter_suncalc.dart';
-import 'position_service.dart';
-import '../store.dart';
-import '../actions/solar_actions.dart';
+import 'package:spa/spa.dart';
+import 'package:geomag/geomag.dart';
+import 'package:flutter_keto/store.dart';
+import 'package:flutter_keto/actions/solar_actions.dart';
+import './times_service.dart';
+import './position_service.dart';
 
 class SolarService {
-  PositionService _positionService = PositionService();
   double eastAngle = 90;
   double westAngle = 270;
+  double magneticDeclination = 0;
+  var num = .328;
 
-  // 180 degrees
-  // on the summer solstice, the sun will rise 110degrees east of due south. So then on June 21st, the
-  // servo start value is 0, and the end value is 180.
-  // the number of hours is say 12 hours.
-  // 180 / 12 = 15 degrees an hour
-  // 15 / 60 = .25 degrees a minute
-  // .25 / 60 = 0.00416 degrees a second.
+  int getDaysSinceSummerSolstice() {
+    var now = DateTime.now();
+    var summerSolstice = DateTime(now.year, 6, 21);
+    var diff = now.difference(summerSolstice);
+    return diff.inDays;
+  }
 
-  // So then, when it's 20 days since the summer solstice, what is the azimuth of the sunrise? What is the difference from the summer
-  // solstice 180 or 0 degree angle? How much does it shift from 180 or 0 day by day?
+  Future<void> calculateSolarAngle() async {
+    final position = await PositionService().getCurrentPosition();
+    final times = await TimesService()
+        .getSunriseAndSunset(position.latitude, position.longitude);
+    var range = 180 - ((getDaysSinceSummerSolstice() * .328) * 2);
+    var now = DateTime.now().toLocal();
+
+    var sunrise = DateTime(
+      now.year,
+      now.month,
+      now.day,
+      times.data.sunrise.toLocal().hour,
+      times.data.sunrise.toLocal().minute,
+      times.data.sunrise.toLocal().second,
+    );
+    var timeSinceSunrise = now.difference(sunrise);
+
+    var dayLength = times.data.dayLength;
+    var percentageOfTwilightCompleted = timeSinceSunrise.inSeconds / dayLength;
+
+    final geomag = GeoMag();
+    final geomagResult =
+        geomag.calculate(position.latitude, position.longitude);
+
+    print('geomagResult $geomagResult');
+  }
 
   Future<Map> getAzimuthAndAltitude() async {
-    print('getAzimuth()');
-    print(store.state.toString());
+    print('store.state.positionState.latitude and longitude');
+    print(store.state.positionState.latitude);
+    print(store.state.positionState.longitude);
     var sunCalcPosition = SunCalc.getPosition(
-      store.state.sunrise,
-      store.state.latitude,
-      store.state.longitude,
+      DateTime.now().toLocal(),
+      store.state.positionState.latitude,
+      store.state.positionState.longitude * -1,
     );
 
-    print('sunCalcPosition $sunCalcPosition');
     print('sunCalcPosition azimuth ${sunCalcPosition['azimuth']}');
+    print('sunCalcPosition altitude ${sunCalcPosition['altitude']}');
+
+    var spaResult = spaCalculate(
+      SPAParams(
+        time: DateTime.now().toLocal(),
+        latitude: store.state.positionState.latitude,
+        longitude: store.state.positionState.longitude,
+      ),
+    );
+
+    print('spaResult ${spaResult.azimuth}');
 
     return {
-      'azimuth': sunCalcPosition['azimuth'] * 180 / PI,
+      'azimuth': spaResult.azimuth,
       'altitude': sunCalcPosition['altitude'],
     };
   }

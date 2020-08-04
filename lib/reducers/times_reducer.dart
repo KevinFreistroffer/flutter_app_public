@@ -1,6 +1,6 @@
 import 'package:redux/redux.dart';
 import '../actions/times_actions.dart';
-import '../models/times_state.dart';
+import '../state/times_state.dart';
 
 final timesReducer = combineReducers<TimesState>(
   [TypedReducer<TimesState, SetTimesAction>(_setTimes)],

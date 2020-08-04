@@ -9,11 +9,9 @@ import './services/authentication.service.dart';
 import './services/user.service.dart';
 import './services/storage.service.dart';
 import 'App.dart';
-import 'models/position_state.dart';
-import './models/app_state.dart';
-import './state/user_model.dart';
-import './state/coordinates_model.dart';
-import './state/times_model.dart';
+import 'state/position_state.dart';
+import './state/app_state.dart';
+
 import 'store.dart';
 
 void main() async {
@@ -42,39 +40,11 @@ void main() async {
 
     // But for now just navigate to the home page
     runApp(
-      MultiProvider(
-        providers: [
-          ChangeNotifierProvider(
-            create: (context) => UserModel(),
-          ),
-          ChangeNotifierProvider(
-            create: (context) => CoordinatesModel(),
-          ),
-          ChangeNotifierProvider(
-            create: (context) => TimesModel(),
-          ),
-        ],
-        child: App('/', store),
-      ),
+      App('/', store),
     );
   }).catchError((error) {
     print(
         'An error occurred in main.dart in SharedPreferences.getInstance $error');
-    runApp(
-      MultiProvider(
-        providers: [
-          ChangeNotifierProvider(
-            create: (context) => UserModel(),
-          ),
-          ChangeNotifierProvider(
-            create: (context) => CoordinatesModel(),
-          ),
-          ChangeNotifierProvider(
-            create: (context) => TimesModel(),
-          ),
-        ],
-        child: App('/', store),
-      ),
-    );
+    runApp(App('/', store));
   });
 }

@@ -29,8 +29,6 @@ Future<Map> getTilt() async {
       // so the tilt angle is 4 degrees, pretty muxch
       var sunsAzimuth = sin(d) / cos(latitude);
 
-      print('sunsAzimuth $sunsAzimuth');
-
       Map dayData = {
         'milliseconds': sunset - sunrise,
         'seconds': (sunset - sunrise) / 1000,
