@@ -5,7 +5,8 @@ import '../../widgets/submit_button.dart';
 import 'styles.dart';
 import '../../theme.dart';
 import '../../constants.dart';
-import './signup.dart';
+import '../../widgets/welcome.text.dart';
+import 'signup.dart';
 
 class PasswordsStep extends StatefulWidget {
   final PageController pageController;
@@ -59,15 +60,17 @@ class _PasswordsStepState extends State<PasswordsStep> {
 
     return Scaffold(
       key: PageStorageKey(1),
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
         automaticallyImplyLeading: false,
         iconTheme: IconThemeData(
-          color: theme.onBackground.withOpacity(0.5),
+          color: theme.onBackground.withOpacity(0.25),
         ),
-        title: Text(
-          'Step 2',
-          style: TextStyle(color: theme.onBackground),
-        ),
+        // title: Text(
+        //   'Create Your Password',
+        //   style: TextStyle(color: theme.onBackground.withOpacity(0.65)),
+        // ),
+        shadowColor: Colors.transparent,
         centerTitle: true,
         leading: IconButton(
           icon: Icon(Icons.arrow_back),
@@ -79,92 +82,115 @@ class _PasswordsStepState extends State<PasswordsStep> {
             widget.pageController.jumpToPage(0);
           },
         ),
-        backgroundColor: theme.primary,
+        elevation: 2.0,
+        backgroundColor: Colors.transparent,
       ),
-      body: SingleChildScrollView(
-        child: Container(
-          height: size.height - (Constants.APP_BAR_HEIGHT * 2).roundToDouble(),
-          padding: EdgeInsets.fromLTRB(size.width * .1, 0, size.width * .1, 0),
-          color: theme.background,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              Text(
-                "Create a password",
-                style: TextStyle(fontSize: 25, color: theme.onBackground),
-              ),
-              SizedBox(height: 8),
-              new Theme(
-                data: theme.themeData,
-                child: TextFormField(
-                  style: TextStyle(
-                    color: theme.onBackground,
-                  ),
-                  cursorColor: theme.onBackground,
-                  decoration: InputDecoration(
-                    hintText: 'At least 6 characters',
-                    labelText: null,
-                    errorText: widget.password.error,
-                    suffixIcon: IconButton(
-                      icon: passwordIcon,
-                      onPressed: () {
-                        setState(
-                          () => _obscurePasswordText = !_obscurePasswordText,
-                        );
-                      },
+      body: OrientationBuilder(
+        builder: (context, orientation) {
+          return Container(
+            child: SingleChildScrollView(
+              child: Container(
+                padding: EdgeInsets.fromLTRB(
+                  size.width * .1 + 16,
+                  0,
+                  size.width * .1 + 16,
+                  size.width * .125,
+                ),
+                color: theme.background,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    SizedBox(
+                      height: Constants.STATUS_BAR_HEIGHT +
+                          Constants.APP_BAR_HEIGHT,
                     ),
-                  ),
-                  obscureText: _obscurePasswordText,
-                  onChanged: (String value) {
-                    widget.handleOnChanged('password', value);
-                  },
-                ),
-              ),
-              SizedBox(height: 32),
-              Text(
-                "Enter password again",
-                style: TextStyle(
-                  fontSize: 25,
-                  color: theme.onBackground,
-                ),
-              ),
-              SizedBox(height: 8),
-              new Theme(
-                data: theme.themeData,
-                child: TextFormField(
-                  style: TextStyle(
-                    color: theme.onBackground,
-                  ),
-                  cursorColor: theme.onBackground,
-                  decoration: InputDecoration(
-                    labelText: '',
-                    errorText: widget.confirmPassword.error,
-                    suffixIcon: IconButton(
-                      icon: confirmPasswordIcon,
-                      onPressed: () {
-                        setState(
-                            () => _obscureConfirmText = !_obscureConfirmText);
-                      },
+                    WelcomeText(
+                      leadingText: 'Sign Up For',
                     ),
-                  ),
-                  obscureText: _obscureConfirmText,
-                  onChanged: (String value) {
-                    widget.handleOnChanged('confirmPassword', value);
-                  },
+                    SizedBox(height: 48),
+                    Text(
+                      "Create a password",
+                      style: TextStyle(
+                        fontSize: 20,
+                        color: theme.onBackground.withOpacity(0.75),
+                      ),
+                    ),
+                    SizedBox(height: 8),
+                    new Theme(
+                      data: theme.themeData,
+                      child: TextFormField(
+                        style: TextStyle(
+                          color: theme.onBackground,
+                        ),
+                        cursorColor: theme.onBackground,
+                        decoration: InputDecoration(
+                          hintText: 'At least 6 characters',
+                          labelText: null,
+                          errorText: widget.password.error,
+                          suffixIcon: IconButton(
+                            icon: passwordIcon,
+                            onPressed: () {
+                              setState(
+                                () => _obscurePasswordText =
+                                    !_obscurePasswordText,
+                              );
+                            },
+                          ),
+                        ),
+                        obscureText: _obscurePasswordText,
+                        onChanged: (String value) {
+                          widget.handleOnChanged('password', value);
+                        },
+                      ),
+                    ),
+                    SizedBox(height: 20),
+                    Text(
+                      "Enter password again",
+                      style: TextStyle(
+                        fontSize: 20,
+                        color: theme.onBackground,
+                      ),
+                    ),
+                    SizedBox(height: 8),
+                    new Theme(
+                      data: theme.themeData,
+                      child: TextFormField(
+                        style: TextStyle(
+                          color: theme.onBackground,
+                        ),
+                        cursorColor: theme.onBackground,
+                        decoration: InputDecoration(
+                          labelText: '',
+                          errorText: widget.confirmPassword.error,
+                          suffixIcon: IconButton(
+                            icon: confirmPasswordIcon,
+                            onPressed: () {
+                              setState(() =>
+                                  _obscureConfirmText = !_obscureConfirmText);
+                            },
+                          ),
+                        ),
+                        obscureText: _obscureConfirmText,
+                        onChanged: (String value) {
+                          widget.handleOnChanged('confirmPassword', value);
+                        },
+                      ),
+                    ),
+                    SizedBox(height: 32),
+                    SubmitButton(
+                      text: 'Next',
+                      formIsValid: widget.password.isValid() &&
+                          widget.confirmPassword.isValid(),
+                      isSubmitting: widget.submitting,
+                      handleOnSubmit: () => widget.handleOnSubmit(Passwords()),
+                    ),
+                  ],
                 ),
               ),
-              SizedBox(height: 32),
-              SubmitButton(
-                text: 'Next',
-                formIsValid: widget.password.isValid() &&
-                    widget.confirmPassword.isValid(),
-                isSubmitting: widget.submitting,
-                handleOnSubmit: () => widget.handleOnSubmit(Passwords()),
-              ),
-            ],
-          ),
-        ),
+            ),
+          );
+        },
       ),
     );
   }

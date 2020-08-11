@@ -12,15 +12,10 @@ import '../../../constants.dart';
 import '../../../theme.dart';
 import '../../../services/position_service.dart';
 import '../../../services/times_service.dart';
-import '../../../models/times_model.dart';
 import '../../../state/app_state.dart';
 import '../../../state/position_state.dart';
 import '../../../state/times_state.dart';
 import 'package:flutter_keto/store.dart';
-
-/**
- * Import the class or service to get the latitude and longitude
- */
 
 class BottomLayer extends CustomPainter {
   final BuildContext context;

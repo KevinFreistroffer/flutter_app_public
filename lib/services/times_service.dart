@@ -15,20 +15,30 @@ class TimesService {
   }
 
   Future<bool> isWithinTwilightHours({@required TimeOfDay time}) async {
-    final PositionService _positionService = PositionService();
-    final position = await _positionService.getCurrentPosition();
+    bool result = false;
+    try {
+      final PositionService _positionService = PositionService();
+      final position = await _positionService.getCurrentPosition();
 
-    var times =
-        await getSunriseAndSunset(position.latitude, position.longitude);
+      print('position lat and long should not be null');
+      print('position $position ${position.latitude}');
 
-    var now = DateTime.now().toLocal();
-    var moment = DateTime(now.year, now.month, now.day, now.hour, now.minute);
-    var isAtOrAfterSunrise = moment.isAtSameMomentAs(times.data.sunrise) ||
-        moment.isAfter(times.data.sunrise);
+      var times =
+          await getSunriseAndSunset(position.latitude, position.longitude);
+      print('calling DateTime.now().toLocal() ${DateTime.now().toLocal()}');
+      var now = DateTime.now().toLocal();
+      var moment = DateTime(now.year, now.month, now.day, now.hour, now.minute);
+      var isAtOrAfterSunrise = moment.isAtSameMomentAs(times.data.sunrise) ||
+          moment.isAfter(times.data.sunrise);
 
-    var isAtOrBeforeSunset = moment.isAtSameMomentAs(times.data.sunset) ||
-        moment.isBefore(times.data.sunset);
+      var isAtOrBeforeSunset = moment.isAtSameMomentAs(times.data.sunset) ||
+          moment.isBefore(times.data.sunset);
 
-    return isAtOrAfterSunrise && isAtOrBeforeSunset;
+      result = isAtOrAfterSunrise && isAtOrBeforeSunset;
+    } catch (error) {
+      print('An error occurred in isWithinTwilightHours() $error');
+    }
+
+    return result;
   }
 }

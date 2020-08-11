@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../../services/loading.service.dart';
 import '../../services/storage.service.dart';
 import '../../services/authentication.service.dart';
 import '../../constants.dart';
 import '../../wait.dart';
 import '../../theme.dart';
-import '../../models/user_model.dart';
 
 class NotSignedInAppBar extends StatefulWidget implements PreferredSizeWidget {
   final String title;

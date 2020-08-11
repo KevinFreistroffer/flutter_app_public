@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_keto/actions/loading_actions.dart';
 import 'package:flutter_keto/actions/raspberry_pi_actions.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_redux/flutter_redux.dart';
-import 'package:flutter_keto/services/loading.service.dart';
 import 'package:flutter_keto/services/storage.service.dart';
 import 'package:flutter_keto/services/authentication.service.dart';
 import 'package:flutter_keto/constants.dart';
@@ -44,20 +44,8 @@ class _SignedInAppBarState extends State<SignedInAppBar> {
 
   final AuthenticationService _authService = AuthenticationService();
   final StorageService _storageService = StorageService();
-  final LoadingService _loadingService = LoadingService();
   final List menuItems = [];
   String username;
-
-  @override
-  void initState() {
-    super.initState();
-  }
-
-  @override
-  void didChangeDependencies() {
-    // TODO: implement didChangeDependencies
-    super.didChangeDependencies();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -93,22 +81,23 @@ class _SignedInAppBarState extends State<SignedInAppBar> {
                       Navigator.pushNamed(context, '/account');
                       break;
                     case Constants.SIGN_OUT:
-                      _loadingService.add(isOpen: true, isSigningOut: true);
                       store.dispatch(
-                        EmptyUserValuesAction(
-                            uid: '',
-                            email: '',
-                            username: '',
-                            nickname: '',
-                            phoneNumber: '',
-                            platform: ''),
+                        SetLoadingValuesAction(
+                          isOpen: true,
+                          showIcon: state.loadingState.showIcon,
+                          title: state.loadingState.title,
+                          text: state.loadingState.text,
+                        ),
                       );
+                      store.dispatch(EmptyUserValuesAction());
                       store.dispatch(
                         SetSSHStatusAction(
-                            sshStatus: Constants.SSH_DISCONNECTED),
+                          sshStatus: Constants.SSH_DISCONNECTED,
+                        ),
                       );
                       store.dispatch(
-                          SetScriptStatusAction(scriptRunning: false));
+                        SetScriptStatusAction(scriptRunning: false),
+                      );
                       store.dispatch(
                         SetAutoStartValuesAction(
                           autoStart: false,
@@ -119,7 +108,14 @@ class _SignedInAppBarState extends State<SignedInAppBar> {
                       );
                       _authService.signOut();
                       await wait(s: 2);
-                      _loadingService.add(isOpen: false);
+                      store.dispatch(
+                        SetLoadingValuesAction(
+                          isOpen: false,
+                          showIcon: state.loadingState.showIcon,
+                          title: state.loadingState.title,
+                          text: state.loadingState.text,
+                        ),
+                      );
                       Navigator.pushNamed(context, '/');
                       break;
 

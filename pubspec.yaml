@@ -121,6 +121,16 @@ flutter:
     - google_logo.png
     - sun.jpg
     - compass.jpg
+    - black_and_white_mountains.jpg
+    - home_background_image.png
+    - angled_background.png
+    - solar_panels.jpg
+    - 1.jpg
+    - 2.jpg
+    - 3.jpg
+    - 4.jpg
+    - 5.jpg
+    - 6.jpg
   #  - images/a_dot_ham.jpeg
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware.

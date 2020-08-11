@@ -1,10 +1,10 @@
 class SetSolarValuesAction {
   final double azimuth;
-  final double altitude;
+  final double zenith;
   final double magneticDeclination;
   SetSolarValuesAction(
     this.azimuth,
-    this.altitude,
+    this.zenith,
     this.magneticDeclination,
   );
 }

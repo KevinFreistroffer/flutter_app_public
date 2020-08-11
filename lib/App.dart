@@ -10,7 +10,6 @@ import 'routes/signup/signup.dart';
 import 'routes/sign_up_from_identity_provider/sign_up_from_identity_provider.dart';
 //import 'routes/make_a_meal/index.dart';
 import 'routes/dashboard/dashboard.dart';
-import 'routes/status/status.dart';
 import 'routes/create_a_nickname/create_a_nickname.dart';
 import 'routes/account/account.dart';
 import 'routes/enter_phone_number/enter_phone_number.dart';
@@ -34,55 +33,55 @@ class App extends StatelessWidget {
       isDark: false,
       context: context,
     )
-      // ..primary = Colors.white
-      // // ..primary = Color.fromRGBO(33, 150, 243, 1)
-      // //..primary = Color.fromRGBO(53, 98, 17, 1)
-      // ..primaryVariant = Colors.black
-      // ..onPrimaryVariant = Colors.white
-      // //..primaryVariant = Color.fromRGBO(0, 13, 22, 1)
-      // // ..secondary = Color.fromRGBO(46, 189, 79, 1)
-      // ..secondary = Color.fromRGBO(61, 124, 125, 1)
-      // // ..secondary = Color.fromRGBO(242, 232, 128, 1)
-      // ..secondaryVariant = Color.fromRGBO(13, 12, 29, 1)
-      // ..accent1 = Color.fromRGBO(164, 96, 75, 1)
-      // //..accent1 = Color.fromRGBO(12, 12, 29, 1)
-      // ..background = Colors.white
-      // //..background = Color.fromRGBO(108, 143, 50, 1)
-      // //..bg1 = Color.fromRGBO(82, 95, 103, 1)
-      // ..surface = Colors.white
-      // ..error = Colors.red.shade400
-      // ..onPrimary = Colors.black
-      // ..onPrimaryVariant = Colors.white
-      // ..onSecondary = Colors.white
-      // ..onBackground = Colors.black
-      // //..onBackground = Colors.white.withOpacity(0.85)
-      // ..onSurface = Colors.red
-      // ..onError = Colors.white;
-
-      // Black orange theme
-      ..primary = Colors.black
+      ..primary = Colors.white
       // ..primary = Color.fromRGBO(33, 150, 243, 1)
       //..primary = Color.fromRGBO(53, 98, 17, 1)
-      ..primaryVariant = Colors.white
+      ..primaryVariant = Colors.black
+      ..onPrimaryVariant = Colors.white
       //..primaryVariant = Color.fromRGBO(0, 13, 22, 1)
       // ..secondary = Color.fromRGBO(46, 189, 79, 1)
-      ..secondary = Color.fromRGBO(254, 176, 98, 1)
+      ..secondary = Color.fromRGBO(61, 124, 125, 1)
       // ..secondary = Color.fromRGBO(242, 232, 128, 1)
       ..secondaryVariant = Color.fromRGBO(13, 12, 29, 1)
       ..accent1 = Color.fromRGBO(164, 96, 75, 1)
-      //..accent1 = Color.fromRGBObl(12, 12, 29, 1)
-      ..background = Colors.black
+      //..accent1 = Color.fromRGBO(12, 12, 29, 1)
+      ..background = Colors.white
       //..background = Color.fromRGBO(108, 143, 50, 1)
       //..bg1 = Color.fromRGBO(82, 95, 103, 1)
       ..surface = Colors.white
       ..error = Colors.red.shade400
-      ..onPrimary = Colors.white
-      ..onPrimaryVariant = Colors.black
+      ..onPrimary = Colors.black
+      ..onPrimaryVariant = Colors.white
       ..onSecondary = Colors.white
-      ..onBackground = Colors.white
+      ..onBackground = Colors.black
       //..onBackground = Colors.white.withOpacity(0.85)
       ..onSurface = Colors.red
       ..onError = Colors.white;
+
+    // Black orange theme
+    // ..primary = Colors.black
+    // // ..primary = Color.fromRGBO(33, 150, 243, 1)
+    // //..primary = Color.fromRGBO(53, 98, 17, 1)
+    // ..primaryVariant = Colors.white
+    // //..primaryVariant = Color.fromRGBO(0, 13, 22, 1)
+    // // ..secondary = Color.fromRGBO(46, 189, 79, 1)
+    // ..secondary = Color.fromRGBO(254, 176, 98, 1)
+    // // ..secondary = Color.fromRGBO(242, 232, 128, 1)
+    // ..secondaryVariant = Color.fromRGBO(13, 12, 29, 1)
+    // ..accent1 = Color.fromRGBO(164, 96, 75, 1)
+    // //..accent1 = Color.fromRGBObl(12, 12, 29, 1)
+    // ..background = Colors.black
+    // //..background = Color.fromRGBO(108, 143, 50, 1)
+    // //..bg1 = Color.fromRGBO(82, 95, 103, 1)
+    // ..surface = Colors.white
+    // ..error = Colors.red.shade400
+    // ..onPrimary = Colors.white
+    // ..onPrimaryVariant = Colors.black
+    // ..onSecondary = Colors.white
+    // ..onBackground = Colors.white
+    // //..onBackground = Colors.white.withOpacity(0.85)
+    // ..onSurface = Colors.red
+    // ..onError = Colors.white;
 
     return StoreProvider<AppState>(
       store: store,
@@ -101,7 +100,6 @@ class App extends StatelessWidget {
                 SignUpFromIdentityProvider(),
             '/dashboard': (BuildContext context) => Dashboard(),
             '/auto-start': (BuildContext context) => AutoStart(),
-            '/status': (BuildContext context) => Status(),
             '/create-a-nickname': (BuildContext context) => CreateANickname(),
             '/account': (BuildContext context) => Account(),
             '/password-reset': (BuildContext context) => PasswordReset(),

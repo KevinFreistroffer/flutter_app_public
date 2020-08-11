@@ -39,7 +39,6 @@ class _AutoStartState extends State<AutoStart> {
       var hour = sunrise.hour > 12 ? sunrise.hour - 12 : sunrise.hour;
       var minute = sunrise.minute < 10 ? '0${sunrise.minute}' : sunrise.minute;
       autoStartTimeAsString = '$hour:${minute}am';
-      print('autoStartAtSunrise');
     } else {
       autoStartTimeAsString = store.state.rPiState.autoStartTimeAsString;
     }
@@ -53,7 +52,6 @@ class _AutoStartState extends State<AutoStart> {
             : TimeOfDay.fromDateTime(store.state.timesState.sunrise),
       ),
     );
-    print('store.dispatch(StartAsyncAutoStartTimerAction())');
     store.dispatch(isOn
         ? StartAsyncAutoStartTimerAction()
         : StopAsyncAutoStartTimerAction());
@@ -70,44 +68,46 @@ class _AutoStartState extends State<AutoStart> {
         );
       },
     );
-    var dateNowToLocal = DateTime.now().toLocal();
-    var sunrise = store.state.timesState.sunrise;
-    var sunset = store.state.timesState.sunset;
-    var moment = DateTime(
-      dateNowToLocal.year,
-      dateNowToLocal.month,
-      dateNowToLocal.day,
-      time.hour,
-      time.minute,
-    );
-    var isAtOrAfterSunrise =
-        moment.isAtSameMomentAs(sunrise) || moment.isAfter(sunrise);
-    var isAtOrBeforeSunset =
-        moment.isAtSameMomentAs(sunset) || moment.isBefore(sunset);
-    if (isAtOrAfterSunrise && isAtOrBeforeSunset) {
-      setState(() {
-        _time = time;
-        _timeAsString =
-            '${time.hour > 12 ? time.hour - 12 : time.hour}:${time.minute < 10 ? '0${time.minute}' : time.minute} ${time.period == DayPeriod.am ? 'am' : 'pm'}';
-      });
-      store.dispatch(SetAutoStartValuesAction(
-        autoStart: true,
-        autoStartAtSunrise: store.state.rPiState.autoStartAtSunrise,
-        autoStartTime: time,
-        autoStartTimeAsString: _timeAsString,
-      ));
-    } else {
-      await _displaySelectTimeWithinTwilightAlert();
-      setState(() {
-        _time = null;
-        _timeAsString = null;
-      });
-      store.dispatch(SetAutoStartValuesAction(
-        autoStart: store.state.rPiState.autoStart,
-        autoStartAtSunrise: false,
-        autoStartTime: null,
-        autoStartTimeAsString: '',
-      ));
+    if (time != null) {
+      var dateNowToLocal = DateTime.now().toLocal();
+      var sunrise = store.state.timesState.sunrise;
+      var sunset = store.state.timesState.sunset;
+      var moment = DateTime(
+        dateNowToLocal.year,
+        dateNowToLocal.month,
+        dateNowToLocal.day,
+        time.hour,
+        time.minute,
+      );
+      var isAtOrAfterSunrise =
+          moment.isAtSameMomentAs(sunrise) || moment.isAfter(sunrise);
+      var isAtOrBeforeSunset =
+          moment.isAtSameMomentAs(sunset) || moment.isBefore(sunset);
+      if (isAtOrAfterSunrise && isAtOrBeforeSunset) {
+        setState(() {
+          _time = time;
+          _timeAsString =
+              '${time.hour > 12 ? time.hour - 12 : time.hour}:${time.minute < 10 ? '0${time.minute}' : time.minute} ${time.period == DayPeriod.am ? 'am' : 'pm'}';
+        });
+        store.dispatch(SetAutoStartValuesAction(
+          autoStart: true,
+          autoStartAtSunrise: store.state.rPiState.autoStartAtSunrise,
+          autoStartTime: time,
+          autoStartTimeAsString: _timeAsString,
+        ));
+      } else {
+        await _displaySelectTimeWithinTwilightAlert();
+        setState(() {
+          _time = null;
+          _timeAsString = null;
+        });
+        store.dispatch(SetAutoStartValuesAction(
+          autoStart: store.state.rPiState.autoStart,
+          autoStartAtSunrise: false,
+          autoStartTime: null,
+          autoStartTimeAsString: '',
+        ));
+      }
     }
 
     // if selected time is not within the twilight range,

@@ -52,13 +52,9 @@ class RPiService {
     );
   }
 
-  Future<String> startScript({
-    int twilightDuration,
-    int minutesSinceSunrise,
-  }) async {
-    print('RPiService startScript()');
+  Future<String> startScript() async {
     return await client.execute(
-      'cd ${Constants.PI_SCRIPT_DIRECTORY} && python3 script.py --twilightDuration $twilightDuration --minutesSinceSunrise $minutesSinceSunrise',
+      'cd ${Constants.PI_SCRIPT_DIRECTORY} && python3 script.py --latitude ${store.state.positionState.latitude} --longitude ${store.state.positionState.longitude}',
     );
   }
 
@@ -70,7 +66,15 @@ class RPiService {
       );
     } catch (error) {
       print(
-          'An error occurred in createWPASupplicantFileWithNetworkDetails $error');
+        'An error occurred in createWPASupplicantFileWithNetworkDetails $error',
+      );
     }
   }
 }
+
+/**
+ * find the exiting create WPASupp file and replace it with whatever.py with a datetime
+ * copy the datetime value into the script execution
+ * 
+ * 
+ */

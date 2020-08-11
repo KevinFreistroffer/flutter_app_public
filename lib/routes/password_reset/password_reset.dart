@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_keto/actions/loading_actions.dart';
 import 'package:flutter_keto/error_dialog.dart';
 import 'package:flutter_keto/services/authentication.service.dart';
+import 'package:flutter_keto/state/app_state.dart';
+import 'package:flutter_keto/store.dart';
+import 'package:flutter_redux/flutter_redux.dart';
 import 'package:provider/provider.dart';
 import 'package:email_validator/email_validator.dart';
 import '../../services/authentication.service.dart';
-import '../../services/loading.service.dart';
 import '../../theme.dart';
 import '../../constants.dart';
 import '../../widgets/loading_screen/LoadingScreen.dart';
@@ -19,7 +22,6 @@ class PasswordReset extends StatefulWidget {
 }
 
 class _PasswordResetState extends State<PasswordReset> {
-  final LoadingService _loadingService = LoadingService();
   final AuthenticationService _authService = AuthenticationService();
   String _email = '';
   bool _submitting = false;
@@ -66,8 +68,13 @@ class _PasswordResetState extends State<PasswordReset> {
   }
 
   Future<void> _handleSuccessConfirmation() async {
-    _loadingService.add(
-      isOpen: true,
+    store.dispatch(
+      SetLoadingValuesAction(
+        isOpen: true,
+        showIcon: store.state.loadingState.showIcon,
+        title: store.state.loadingState.title,
+        text: store.state.loadingState.text,
+      ),
     );
     await wait(s: 2);
     Navigator.pushReplacementNamed(
@@ -116,112 +123,113 @@ class _PasswordResetState extends State<PasswordReset> {
     final Size size = MediaQuery.of(context).size;
     final AppTheme theme = Provider.of<AppTheme>(context);
 
-    return StreamBuilder(
-      initialData: {'isOpen': false, 'isSigningIn': false},
-      stream: _loadingService.controller.stream,
-      builder: (BuildContext context, snapshot) {
-        Widget _widget;
-        if (snapshot.hasData && snapshot.data['isOpen'] == true) {
-          _widget = LoadingScreen(
-            title: snapshot.data['title'] ?? null,
-            text: snapshot.data['text'] ?? null,
-            size: snapshot.data['size'],
-            showIcon: snapshot.data['showIcon'] ?? null,
-            showSuccessIcon: snapshot.data['showSuccessIcon'] ?? null,
-          );
-        } else {
-          _widget = Scaffold(
-            appBar: snapshot.data['isOpen']
-                ? null
-                : AppBar(
-                    centerTitle: true,
-                    title: Text(
-                      'Password Reset',
-                      style: TextStyle(color: theme.onPrimary),
+    return StoreConnector<AppState, AppState>(
+        converter: (store) => store.state,
+        builder: (context, state) {
+          Widget _widget;
+          if (state.loadingState.isOpen) {
+            _widget = LoadingScreen(
+              title: state.loadingState.title ?? null,
+              text: state.loadingState.text ?? null,
+              showIcon: state.loadingState.showIcon ?? null,
+            );
+          } else {
+            _widget = Scaffold(
+              appBar: state.loadingState.isOpen
+                  ? null
+                  : AppBar(
+                      elevation: 2.0,
+                      centerTitle: true,
+                      title: Text(
+                        'Password Reset',
+                        style: TextStyle(color: theme.onPrimary),
+                      ),
+                      backgroundColor: theme.primary,
+                      automaticallyImplyLeading: true,
+                      iconTheme: IconThemeData(
+                        color: Colors.black,
+                      ),
                     ),
-                    backgroundColor: theme.primary,
-                  ),
-            body: Container(
-              padding: EdgeInsets.fromLTRB(
-                size.width * .1,
-                size.width * .125,
-                size.width * .1,
-                size.width * .125,
-              ),
-              color: theme.background,
-              height: size.height,
-              child: Center(
-                child: OrientationBuilder(
-                  builder: (context, orientation) {
-                    return SingleChildScrollView(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: <Widget>[
-                          Container(
-                            child: Text(
-                                'Enter the email of the account\'s password you want to reset.',
+              body: Container(
+                padding: EdgeInsets.fromLTRB(
+                  size.width * .1,
+                  size.width * .125,
+                  size.width * .1,
+                  size.width * .125,
+                ),
+                color: theme.background,
+                height: size.height,
+                child: Center(
+                  child: OrientationBuilder(
+                    builder: (context, orientation) {
+                      return SingleChildScrollView(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: <Widget>[
+                            Container(
+                              child: Text(
+                                  'Enter the email of the account\'s password you want to reset.',
+                                  style: TextStyle(
+                                    fontSize: 25,
+                                  )),
+                            ),
+                            SizedBox(height: 8),
+                            new Theme(
+                              data: theme.themeData,
+                              child: TextFormField(
                                 style: TextStyle(
-                                  fontSize: 25,
-                                )),
-                          ),
-                          SizedBox(height: 8),
-                          new Theme(
-                            data: theme.themeData,
-                            child: TextFormField(
-                              style: TextStyle(
-                                color: theme.onBackground,
-                              ),
-                              cursorColor: Colors.black,
-                              decoration: InputDecoration(
-                                hintText: 'example@example.com',
-                                errorText: _errors['email'],
-                                focusedBorder: OutlineInputBorder(
-                                  borderSide: BorderSide(
-                                    color: Colors.black.withOpacity(0.5),
-                                    width: 2.0,
+                                  color: theme.onBackground,
+                                ),
+                                cursorColor: Colors.black,
+                                decoration: InputDecoration(
+                                  hintText: 'example@example.com',
+                                  errorText: _errors['email'],
+                                  focusedBorder: OutlineInputBorder(
+                                    borderSide: BorderSide(
+                                      color: Colors.black.withOpacity(0.5),
+                                      width: 2.0,
+                                    ),
                                   ),
                                 ),
+                                keyboardType: TextInputType.emailAddress,
+                                onChanged: (value) =>
+                                    _handlesFormInputsChangeValue(value),
                               ),
-                              keyboardType: TextInputType.emailAddress,
-                              onChanged: (value) =>
-                                  _handlesFormInputsChangeValue(value),
                             ),
-                          ),
-                          SizedBox(height: 32),
-                          Row(
-                            children: <Widget>[
-                              Expanded(
-                                child: SubmitButton(
-                                  text: 'NEXT',
-                                  isSubmitting: _submitting,
-                                  formIsValid:
-                                      _errors['email'] == null ? true : false,
-                                  handleOnSubmit: _handleFormSubmission,
+                            SizedBox(height: 32),
+                            Row(
+                              children: <Widget>[
+                                Expanded(
+                                  child: SubmitButton(
+                                    text: 'NEXT',
+                                    isSubmitting: _submitting,
+                                    formIsValid:
+                                        _errors['email'] == null ? true : false,
+                                    handleOnSubmit: _handleFormSubmission,
+                                  ),
                                 ),
-                              ),
-                            ],
-                          ),
-                          SizedBox(height: 16),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: <Widget>[
-                              GestureDetector(
-                                  child: Text('Cancel'),
-                                  onTap: () => Navigator.of(context).pop()),
-                            ],
-                          ),
-                        ],
-                      ),
-                    );
-                  },
+                              ],
+                            ),
+                            SizedBox(height: 16),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: <Widget>[
+                                GestureDetector(
+                                    child: Text('Cancel'),
+                                    onTap: () => Navigator.of(context).pop()),
+                              ],
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
                 ),
               ),
-            ),
-          );
-        }
+            );
+          }
 
-        return _widget;
-      },
-    );
+          return _widget;
+        });
   }
 }

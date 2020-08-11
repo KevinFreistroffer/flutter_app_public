@@ -1,5 +1,5 @@
 class Constants {
-  static const String APP_NAME = 'FlutterPi';
+  static const String APP_NAME = 'Pi Solar Tracker';
   static const String ERROR_USERNAME_REQUIRED = 'Username is required.';
   static const String ERROR_PASSWORD_REQUIRED = 'Password is required.';
   static const String ERROR_CONFIRM_YOUR_PASSWORD_REQUIRED =
@@ -51,7 +51,7 @@ class Constants {
       'The email address and or username are already registered.';
   static const String ERROR_INVALID_VERIFICATION_CODE = 'Invalid SMS code.';
   static const String ERROR_PLEASE_CHECK_NETWORK =
-      'An error occurred. Please make sure your internet connection is available.';
+      'An error occurred. Please check your internet connection.';
   static const String ERROR_NETWORK_REQUEST_FAILED =
       'A network error occurred. Please check your internet connection is connected, then try again.';
   static const String ERROR_PLEASE_TRY_AGAIN =
@@ -62,6 +62,7 @@ class Constants {
   static const String BREAKFAST = "breakfast";
   static const String SIGN_OUT = 'sign out';
   static const double APP_BAR_HEIGHT = 56.0;
+  static const double STATUS_BAR_HEIGHT = 24.0;
   static const String ENTER_YOUR_PHONE_NUMBER = 'enterYourPhoneNumber';
   static const String VERIFY_SMS_CODE = 'verifySMSCode';
   static const String SIGN_IN_WITH_CREDENTIALS = 'signInWithCredentials';

@@ -25,7 +25,6 @@ import 'package:redux/redux.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_keto/route_observer.dart';
 
-import 'package:flutter_keto/services/loading.service.dart';
 import 'package:flutter_keto/globals.dart';
 import 'package:flutter_keto/services/storage.service.dart';
 import 'package:flutter_keto/constants.dart';
@@ -41,12 +40,9 @@ import 'package:flutter_keto/widgets/loading_screen/LoadingScreen.dart';
 import 'package:flutter_keto/actions/position_actions.dart';
 import 'package:flutter_keto/actions/times_actions.dart';
 import 'package:flutter_keto/error_dialog.dart';
-import 'package:flutter_keto/error_dialog.dart';
 import './styles.dart';
 import 'package:flutter_keto/theme.dart';
 import 'package:flutter_keto/wait.dart';
-import 'package:flutter_keto/models/user_model.dart';
-import 'package:flutter_keto/models/times_model.dart';
 import 'package:flutter_keto/__private_config__.dart';
 import 'tabs/connection.dart';
 import 'tabs/tracking.dart';
@@ -57,6 +53,7 @@ import 'package:flutter_keto/state/position_state.dart';
 import 'package:flutter_keto/state/raspberry_pi_state.dart';
 import 'package:flutter_keto/store.dart';
 import 'package:flutter_compass/flutter_compass.dart';
+import 'package:flutter_keto/error_dialog.dart';
 
 class Dashboard extends StatefulWidget {
   Dashboard({Key key}) : super(key: key);
@@ -70,23 +67,19 @@ class _DashboardState extends State<Dashboard>
   // with SingleTickerProviderStateMixin {
   final Globals _globals = Globals();
   final AuthenticationService _authService = AuthenticationService();
-  final LoadingService _loadingService = LoadingService();
-  final RPiService _RPiService = RPiService();
+  final RPiService _piService = RPiService();
   final SolarService _solarService = SolarService();
   final PositionService _positionService = PositionService();
   final TimesService _timesService = TimesService();
   final PermissionHandlerService _permissionService =
       PermissionHandlerService();
-  final TimesModel _timesModel = TimesModel();
 
   bool displayDashboardContent = false;
   AppTheme theme;
   dynamic _selectedTime;
 
   @override
-  initState() {
-    super.initState();
-  }
+  void initState() {}
 
   @override
   void dispose() {
@@ -119,8 +112,6 @@ class _DashboardState extends State<Dashboard>
     routeObserver.subscribe(this, ModalRoute.of(context));
     _permissionService.requestPermission(Permission.location).then(
       (status) async {
-        print('Permission requestStatus(location) status: $status');
-
         store.dispatch(
           SetLoadingValuesAction(
             isOpen: false,
@@ -193,10 +184,8 @@ class _DashboardState extends State<Dashboard>
   }
 
   Future<void> _getCoordinates() async {
-    print('_getCoordinates()');
     // call position or coords service
     final Position position = await _positionService.getCurrentPosition();
-    print('position $position ${position.altitude}');
 
     if (position != null) {
       store.dispatch(
@@ -242,28 +231,28 @@ class _DashboardState extends State<Dashboard>
 
   Future<void> _getSolarValues() async {
     try {
-      final azimuthAndAltitude = await _solarService.getAzimuthAndAltitude();
+      final solarValues = await _solarService.getSolarValues();
       final magneticDeclination =
           await _positionService.getMagneticDeclination();
       store.dispatch(
         SetSolarValuesAction(
-          azimuthAndAltitude['azimuth'],
-          azimuthAndAltitude['altitude'],
+          solarValues['azimuth'],
+          solarValues['zenith'],
           magneticDeclination,
         ),
       );
     } catch (error) {
       print(
-          'An error occurred in SolarService.getAzimuthAndAltitude() ${error.toString()}');
+        'An error occurred in SolarService.getSolarValues() ${error.toString()}',
+      );
       _displayErrorDialog(error.toString());
     }
   }
 
   Future<void> _sshToRaspberryPi() async {
-    print('_sshToRaspberryPi()');
     store.dispatch(SetSSHStatusAction(sshStatus: Constants.SSH_CONNECTING));
 
-    var response = await _RPiService.connect().timeout(
+    var response = await _piService.connect().timeout(
       Duration(seconds: 20),
       onTimeout: () async {
         store.dispatch(
@@ -290,8 +279,6 @@ class _DashboardState extends State<Dashboard>
       _displayErrorDialog(errorMessage);
     });
 
-    print('sshToRaspberryPi response $response');
-
     if (response == Constants.SSH_CONNECT_SUCCESS) {
       store.dispatch(SetSSHStatusAction(sshStatus: Constants.SSH_CONNECTED));
     }
@@ -303,9 +290,7 @@ class _DashboardState extends State<Dashboard>
   }
 
   Future<void> _disconnectFromRaspberryPi() async {
-    print('_disconnectFromRaspberryPi()');
-
-    await _RPiService.disconnect();
+    await _piService.disconnect();
 
     store.dispatch(SetSSHStatusAction(sshStatus: Constants.SSH_DISCONNECTED));
     store.dispatch(SetScriptStatusAction(scriptRunning: false));
@@ -327,39 +312,39 @@ class _DashboardState extends State<Dashboard>
     );
 
     try {
-      if (isWithinTwilightHours) {
+      if (true) {
         var now = DateTime.now().toLocal();
 
         var state = store.state;
 
-        var sunriseDateTime = DateTime(
-          now.year,
-          now.month,
-          now.day,
-          state.timesState.sunrise.toLocal().hour,
-          state.timesState.sunrise.toLocal().minute,
-        );
+        print('startTheScript()');
+        print(state.positionState.latitude);
+        print(state.positionState.longitude);
 
-        var sunsetDateTime = DateTime(
-          now.year,
-          now.month,
-          now.day,
-          state.timesState.sunset.toLocal().hour,
-          state.timesState.sunset.toLocal().minute,
-        );
+        // var sunriseDateTime = DateTime(
+        //   now.year,
+        //   now.month,
+        //   now.day,
+        //   state.timesState.sunrise.toLocal().hour,
+        //   state.timesState.sunrise.toLocal().minute,
+        // );
 
-        Duration duration = sunsetDateTime.difference(sunriseDateTime);
-        Duration durationSinceSunrise =
-            DateTime.now().toLocal().difference(sunriseDateTime);
+        // var sunsetDateTime = DateTime(
+        //   now.year,
+        //   now.month,
+        //   now.day,
+        //   state.timesState.sunset.toLocal().hour,
+        //   state.timesState.sunset.toLocal().minute,
+        // );
 
         store.dispatch(SetScriptStatusAction(scriptRunning: true));
-        final scriptResponse = await _RPiService.startScript(
-          twilightDuration: duration.inMinutes,
-          minutesSinceSunrise: durationSinceSunrise.inMinutes,
-        ).catchError((error) {
+        final scriptResponse =
+            await _piService.startScript().catchError((error) {
           print('An error occurred in RPiService.startScript() error $error');
           _displayErrorDialog(error.toString());
         });
+
+        print('script response $scriptResponse');
 
         // Successfully completed the script
         if (scriptResponse == Constants.SCRIPT_COMPLETED) {
@@ -386,7 +371,7 @@ class _DashboardState extends State<Dashboard>
   }
 
   Future<void> _exitTheScript() async {
-    final response = await _RPiService.exitTheScript();
+    final response = await _piService.exitTheScript();
     // On any response, success or error, just stop the script.
     if (response == Constants.SCRIPT_EXITED) {
       // successfully exited without any errors
@@ -429,7 +414,7 @@ class _DashboardState extends State<Dashboard>
             size.height; // hacky. how to access orientation? OrientationModel?
 
         return AlertDialog(
-          backgroundColor: theme.primaryVariant,
+          backgroundColor: theme.background,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(10.0),
           ),
@@ -465,14 +450,19 @@ class _DashboardState extends State<Dashboard>
             constraints: BoxConstraints(
               maxWidth: 150,
             ),
-            color: theme.primaryVariant,
+            color: theme.background,
             child: SingleChildScrollView(
               child: ListBody(
                 children: <Widget>[
                   for (var s in strings)
                     Container(
                       padding: EdgeInsets.only(top: 10, bottom: 10),
-                      child: Text(s),
+                      child: Text(
+                        s,
+                        style: TextStyle(
+                          color: theme.onBackground,
+                        ),
+                      ),
                     )
                 ],
               ),
@@ -487,7 +477,7 @@ class _DashboardState extends State<Dashboard>
                         ['fontSize'],
                     fontWeight: styles['actions']['flatButton']['text']
                         ['fontWeight'],
-                    color: theme.onPrimaryVariant),
+                    color: theme.onBackground),
               ),
               onTap: () => Navigator.of(context).pop(),
             ),
@@ -502,10 +492,6 @@ class _DashboardState extends State<Dashboard>
       context: context,
       barrierDismissible: true, // user must tap button!
       builder: (BuildContext context) {
-        final Size size = MediaQuery.of(context).size;
-        final isPortrait = size.width <
-            size.height; // hacky. how to access orientation? OrientationModel?
-
         return SimpleDialog(
           title: const Text('The tracking will start \n at tomorrows sunrise'),
           children: <Widget>[
@@ -549,14 +535,12 @@ class _DashboardState extends State<Dashboard>
     return StoreConnector<AppState, AppState>(
         converter: (store) => store.state,
         builder: (context, state) {
-          String scriptButtonText;
           TimesState timesState = state.timesState;
           RPiState piState = state.rPiState;
           String sunrise = 'N/A';
           String sunset = 'N/A';
           String dayLength = 'N/A';
           DateFormat dateFormat = DateFormat('h:mm:ss');
-          int angle = null;
           /**
            * the angle is determined on the total range, the total duration of the time,
            * the minutes since sunrise and that percentage within the total range
@@ -860,19 +844,13 @@ class _DashboardState extends State<Dashboard>
                                                     color: Colors.black12,
                                                   ),
                                                   TitleValue(
-                                                    'Twilight Duration',
+                                                    'Daylight Duration',
                                                     dayLength,
                                                   ),
                                                   Divider(
                                                     color: Colors.black12,
                                                   ),
-                                                  TitleValue(
-                                                    'Current Angle',
-                                                    '20',
-                                                  ),
-                                                  Divider(
-                                                    color: Colors.black12,
-                                                  ),
+
                                                   TitleValue(
                                                       'Azimuth',
                                                       state.solarState
@@ -880,6 +858,18 @@ class _DashboardState extends State<Dashboard>
                                                               null
                                                           ? state.solarState
                                                               .azimuth
+                                                              .toStringAsFixed(
+                                                                  3)
+                                                          : 'N/A'),
+                                                  Divider(
+                                                    color: Colors.black12,
+                                                  ),
+                                                  TitleValue(
+                                                      'Altitude',
+                                                      state.solarState.zenith !=
+                                                              null
+                                                          ? state
+                                                              .solarState.zenith
                                                               .toStringAsFixed(
                                                                   3)
                                                           : 'N/A'),
@@ -952,7 +942,6 @@ class _DashboardState extends State<Dashboard>
                                           ? true
                                           : false,
                                       onChanged: (bool isOn) async {
-                                        print('Switch is on $isOn');
                                         if (isOn) {
                                           await _startTheScript();
                                         } else {

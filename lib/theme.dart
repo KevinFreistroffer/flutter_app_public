@@ -49,7 +49,7 @@ class AppTheme {
       colorScheme: colorScheme,
     ).copyWith(
       buttonTheme: ButtonThemeData(
-        buttonColor: secondary,
+        buttonColor: Colors.yellow,
         textTheme: ButtonTextTheme.normal,
         disabledColor: Colors.white,
         //buttonColor: Color.fromRGBO(193, 92, 55, 1),

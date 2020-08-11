@@ -1,14 +1,14 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth_platform_interface/firebase_auth_platform_interface.dart';
+import 'package:flutter_keto/actions/user_actions.dart';
 import 'package:provider/provider.dart';
 import '../../constants.dart';
 import '../../services/authentication.service.dart';
 import '../../services/database.service.dart';
 import '../../services/storage.service.dart';
-import './styles.dart';
-import '../../models/user_model.dart';
 import '../../error_dialog.dart';
+import 'package:flutter_keto/store.dart';
 
 class EnterSMSCode extends StatefulWidget {
   EnterSMSCode({
@@ -23,15 +23,8 @@ class _EnterSMSCodeState extends State<EnterSMSCode> {
   final AuthenticationService _authService = AuthenticationService();
   final DatabaseService _databaseService = DatabaseService();
   final StorageService _storageService = StorageService();
-  UserModel _userModel;
   String _smsCode = '';
   dynamic _error;
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    _userModel = Provider.of<UserModel>(context, listen: false);
-  }
 
   _handleFormInputOnChange(String value) {
     if (value.trim().isNotEmpty && value == Constants.ERROR_SMS_CODE_REQUIRED) {
@@ -70,7 +63,7 @@ class _EnterSMSCodeState extends State<EnterSMSCode> {
         // final foundUserResult = await _databaseService.getUserWithUID(
         //   authResult.user.uid,
         // );
-        _userModel.set(uid: authResult.user.uid);
+        store.dispatch(SetUserValuesAction(uid: authResult.user.uid));
         await _storageService.remove('phoneVerificationInProgress');
         await _storageService.remove('phoneNumber');
         await _storageService.remove('verificationID');

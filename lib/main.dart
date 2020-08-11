@@ -44,7 +44,8 @@ void main() async {
     );
   }).catchError((error) {
     print(
-        'An error occurred in main.dart in SharedPreferences.getInstance $error');
+      'An error occurred in main.dart in SharedPreferences.getInstance $error',
+    );
     runApp(App('/', store));
   });
 }

@@ -218,7 +218,7 @@ class _EnterPhoneNumberState extends State<EnterPhoneNumber> {
                               // shape: RoundedRectangleBorder(
                               //   borderRadius: BorderRadius.circular(100.0),
                               // ),
-                              child: Text('Get code',
+                              child: Text('Get fdasfasdfcode',
                                   style: TextStyle(
                                     color: Colors.white,
                                     fontSize: 18,

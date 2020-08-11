@@ -26,12 +26,7 @@ class AutoStartMiddleware implements MiddlewareClass<AppState> {
 
   @override
   void call(Store<AppState> store, dynamic action, NextDispatcher next) {
-    print('AutoStartMiddleware() call()');
-    print('action $action');
-
     if (action is StartAsyncAutoStartTimerAction) {
-      print('AutoStartMiddleware() call() is StartAsyncAction');
-
       _timer = Timer.periodic(Duration(seconds: 1), (timer) async {
         // Handles if the script is started automatically
         // and cancels the timer to prevent recalling startScript repeatedly
@@ -67,10 +62,7 @@ class AutoStartMiddleware implements MiddlewareClass<AppState> {
 
             store.dispatch(SetScriptStatusAction(scriptRunning: true));
 
-            final scriptResponse = await _RPiService.startScript(
-              twilightDuration: duration.inMinutes,
-              minutesSinceSunrise: durationSinceSunrise.inMinutes,
-            );
+            final scriptResponse = await _RPiService.startScript();
 
             // Successfully completed the script
             if (scriptResponse == Constants.SCRIPT_COMPLETED) {
@@ -87,8 +79,6 @@ class AutoStartMiddleware implements MiddlewareClass<AppState> {
     }
 
     if (action is StopAsyncAutoStartTimerAction) {
-      print('AutoStartMiddleware() call() is StopAsyncAction');
-
       _timer.cancel();
     }
 

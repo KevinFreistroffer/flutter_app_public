@@ -1,23 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_keto/actions/loading_actions.dart';
+import 'package:flutter_keto/state/app_state.dart';
+import 'package:flutter_keto/store.dart';
+import 'package:flutter_redux/flutter_redux.dart';
 import 'package:provider/provider.dart';
 import '../../widgets/loading_screen/LoadingScreen.dart';
 import '../../widgets/submit_button.dart';
-import '../../widgets/form_input.dart';
-import '../../services/loading.service.dart';
 import '../../services/authentication.service.dart';
 import '../../services/storage.service.dart';
 import '../../services/database.service.dart';
 import '../../services/user.service.dart';
 import '../../constants.dart';
 import '../../theme.dart';
-import '../enter_phone_number/enter_phone_number.dart';
-import '../enter_sms_code/enter_sms_code.dart';
-import './styles.dart';
+
 import '../../wait.dart';
 import '../../error_dialog.dart';
-
-import '../../models/user_model.dart';
 
 class VerifyPhone extends StatefulWidget {
   VerifyPhone({Key key}) : super(key: key);
@@ -27,12 +25,10 @@ class VerifyPhone extends StatefulWidget {
 }
 
 class _VerifyPhoneState extends State<VerifyPhone> {
-  final LoadingService _loadingService = LoadingService();
   final AuthenticationService _authService = AuthenticationService();
   final StorageService _storageService = StorageService();
   final DatabaseService _databaseService = DatabaseService();
   final UserService _userService = UserService();
-  UserModel _userModel;
   PageController _pageController;
   int _currentPage = 0;
   bool _submitting = false;
@@ -69,7 +65,14 @@ class _VerifyPhoneState extends State<VerifyPhone> {
 
           await _userService.attemptToSetUsernameInCache();
 
-          _loadingService.add(isOpen: true);
+          store.dispatch(
+            SetLoadingValuesAction(
+              isOpen: true,
+              showIcon: store.state.loadingState.showIcon,
+              title: store.state.loadingState.title,
+              text: store.state.loadingState.text,
+            ),
+          );
           await wait(s: 2);
           Navigator.pushNamedAndRemoveUntil(
             context,
@@ -91,12 +94,6 @@ class _VerifyPhoneState extends State<VerifyPhone> {
         ErrorDialog.displayErrorDialog(context, data['error']);
       }
     });
-  }
-
-  @override
-  void didChangeDependecies() {
-    super.didChangeDependencies();
-    _userModel = Provider.of<UserModel>(context, listen: false);
   }
 
   _handleFormInputsOnChange(String name, String value) {
@@ -241,290 +238,317 @@ class _VerifyPhoneState extends State<VerifyPhone> {
     final Size size = MediaQuery.of(context).size;
     final AppTheme theme = Provider.of<AppTheme>(context);
 
-    return Consumer<UserModel>(
-      builder: (context, user, child) {
-        return StreamBuilder(
-          stream: _loadingService.controller.stream,
-          builder: (context, snapshot) {
-            Widget _widget;
-            if (snapshot.hasData && snapshot.data['isOpen']) {
-              _widget = LoadingScreen(
-                title: snapshot.data['title'],
-                text: snapshot.data['text'],
-                size: snapshot.data['size'],
-                showIcon: snapshot.data['showIcon'],
-                showSuccessIcon: snapshot.data['showSuccessIcon'],
-              );
-            } else {
-              _widget = Scaffold(
-                backgroundColor: Colors.white,
-                appBar: AppBar(
-                  title: Text(
-                    '${_currentPage == 0 ? 'Enter Phone Number' : 'Enter SMS Code'}',
-                  ),
-                  centerTitle: true,
-                ),
-                body: OrientationBuilder(
-                  builder: (context, orientation) {
-                    return SingleChildScrollView(
-                      child: Container(
-                        height: size.height - Constants.APP_BAR_HEIGHT,
-                        padding: EdgeInsets.fromLTRB(
-                          size.width * .06,
-                          0,
-                          size.width * .06,
-                          0,
-                        ),
-                        color: theme.background,
-                        child: Form(
-                          child: PageView(
-                            controller: _pageController,
-                            physics: NeverScrollableScrollPhysics(),
-                            onPageChanged: (int pageIndex) {
-                              setState(() => _currentPage = pageIndex);
-                            },
-                            children: <Widget>[
-                              Container(
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: <Widget>[
-                                    Visibility(
-                                      visible: _enterPhoneIsVisible,
-                                      child: AnimatedOpacity(
-                                        opacity: _enterPhoneOpacity,
-                                        duration: Duration(milliseconds: 500),
-                                        child: Column(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.center,
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
+    return StoreConnector<AppState, AppState>(
+      converter: (store) => store.state,
+      builder: (context, state) {
+        Widget _widget;
+        if (state.loadingState.isOpen) {
+          _widget = LoadingScreen(
+            title: state.loadingState.title,
+            text: state.loadingState.text,
+            showIcon: state.loadingState.showIcon,
+          );
+        } else {
+          _widget = Scaffold(
+            backgroundColor: Colors.white,
+            appBar: AppBar(
+              elevation: 2.0,
+              centerTitle: true,
+              title: Text(
+                '${_currentPage == 0 ? 'Enter Phone Number' : 'Enter SMS Code'}',
+                style: TextStyle(color: theme.onPrimary),
+              ),
+              backgroundColor: theme.primary,
+              automaticallyImplyLeading: true,
+              iconTheme: IconThemeData(
+                color: Colors.black,
+              ),
+            ),
+            body: OrientationBuilder(
+              builder: (context, orientation) {
+                return SingleChildScrollView(
+                  child: Container(
+                    height: size.height - Constants.APP_BAR_HEIGHT,
+                    padding: EdgeInsets.fromLTRB(
+                      size.width * .06,
+                      0,
+                      size.width * .06,
+                      0,
+                    ),
+                    color: theme.background,
+                    child: Form(
+                      child: PageView(
+                        controller: _pageController,
+                        physics: NeverScrollableScrollPhysics(),
+                        onPageChanged: (int pageIndex) {
+                          setState(() => _currentPage = pageIndex);
+                        },
+                        children: <Widget>[
+                          Container(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: <Widget>[
+                                Visibility(
+                                  visible: _enterPhoneIsVisible,
+                                  child: AnimatedOpacity(
+                                    opacity: _enterPhoneOpacity,
+                                    duration: Duration(milliseconds: 500),
+                                    child: Column(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: <Widget>[
+                                        Text(
+                                          'Phone Number',
+                                          style: TextStyle(
+                                              fontSize: 25,
+                                              color: theme.onBackground),
+                                        ),
+                                        SizedBox(height: 8),
+                                        TextFormField(
+                                          decoration: InputDecoration(
+                                            labelText: 'Phone number',
+                                            prefixText: '+1',
+                                            border: OutlineInputBorder(),
+                                            errorText: _errors['phone'],
+                                            errorStyle: TextStyle(
+                                              color: Colors.red,
+                                              fontSize: 15,
+                                              letterSpacing: 0.2,
+                                              // backgroundColor: Colors.white.withOpacity(0.2),
+                                            ),
+                                            errorMaxLines: 3,
+                                          ),
+                                          onChanged: (String value) {
+                                            _handleFormInputsOnChange(
+                                              'phone',
+                                              value,
+                                            );
+                                          },
+                                          keyboardType: TextInputType.number,
+                                        ),
+                                        SizedBox(height: 16),
+                                        Text(
+                                          'if you use your phone number, you might receive an SMS message for verification and standard rates apply.',
+                                          style: TextStyle(
+                                            color: theme.onBackground
+                                                .withOpacity(0.75),
+                                          ),
+                                        ),
+                                        SizedBox(height: 16),
+                                        Row(
                                           children: <Widget>[
-                                            Text(
-                                              'Phone Number',
-                                              style: TextStyle(
-                                                  fontSize: 25,
-                                                  color: theme.onBackground),
-                                            ),
-                                            SizedBox(height: 8),
-                                            TextFormField(
-                                              decoration: InputDecoration(
-                                                labelText: 'Phone number',
-                                                prefixText: '+1',
-                                                border: OutlineInputBorder(),
-                                                errorText: _errors['phone'],
-                                                errorStyle: TextStyle(
-                                                  color: Colors.red,
-                                                  fontSize: 15,
-                                                  letterSpacing: 0.2,
-                                                  // backgroundColor: Colors.white.withOpacity(0.2),
-                                                ),
-                                                errorMaxLines: 3,
-                                              ),
-                                              onChanged: (String value) {
-                                                _handleFormInputsOnChange(
-                                                  'phone',
-                                                  value,
+                                            Expanded(
+                                                child: SubmitButton(
+                                              text: 'Get Code',
+                                              handleOnSubmit: () {
+                                                FocusScope.of(context)
+                                                    .requestFocus(
+                                                  FocusNode(),
                                                 );
+                                                _handleSubmit();
                                               },
-                                              keyboardType:
-                                                  TextInputType.number,
-                                            ),
-                                            SizedBox(height: 16),
-                                            Text(
-                                              'if you use your phone number, you might receive an SMS message for verification and standard rates apply.',
-                                              style: TextStyle(
-                                                color: theme.onBackground
-                                                    .withOpacity(0.75),
-                                              ),
-                                            ),
-                                            SizedBox(height: 16),
-                                            Row(
-                                              children: <Widget>[
-                                                Expanded(
-                                                  child: RaisedButton(
-                                                    child: Text(
-                                                      'Get code',
-                                                      style: TextStyle(
-                                                        color: Colors.white,
-                                                        fontSize: 18,
-                                                      ),
-                                                    ),
-                                                    onPressed: () {
-                                                      FocusScope.of(context)
-                                                          .requestFocus(
-                                                        FocusNode(),
-                                                      );
-                                                      _handleSubmit();
-                                                    },
-                                                  ),
+                                              isSubmitting: _submitting,
+                                              formIsValid: _errors['phone'] ==
+                                                      null &&
+                                                  _errors['smsCode'] == null,
+                                            )
+                                                // child: RaisedButton(
+                                                //   child: Text(
+                                                //     'Get code',
+                                                //     style: TextStyle(
+                                                //       color: Colors.white,
+                                                //       fontSize: 18,
+                                                //     ),
+                                                //   ),
+                                                //   onPressed: () {
+                                                //     FocusScope.of(context)
+                                                //         .requestFocus(
+                                                //       FocusNode(),
+                                                //     );
+                                                //     _handleSubmit();
+                                                //   },
+                                                // ),
                                                 ),
-                                              ],
-                                            ),
                                           ],
                                         ),
-                                      ),
+                                      ],
                                     ),
-                                    Visibility(
-                                      visible: _codeSentIsVisible,
-                                      child: AnimatedOpacity(
-                                        duration: Duration(milliseconds: 500),
-                                        opacity: _codeSentOpacity,
-                                        child: GestureDetector(
-                                          onTap: () {
-                                            _pageController.jumpToPage(1);
-                                          },
-                                          child: Column(
-                                            children: <Widget>[
-                                              Text(
-                                                'We will send a One Time Password to this mobile number',
-                                                style: TextStyle(
-                                                  fontSize: 20,
-                                                  color: theme.onBackground,
-                                                ),
-                                              ),
-                                              Flex(
-                                                direction: Axis.vertical,
-                                                children: <Widget>[
-                                                  Expanded(
-                                                    child: RaisedButton(
-                                                      child: Text('Enter Code'),
-                                                      onPressed: () {
-                                                        _loadingService.add(
-                                                            isOpen: true);
-                                                        setState(() {
-                                                          _codeSentIsVisible =
-                                                              false;
-                                                          _codeSentOpacity = 0;
-                                                          _enterPhoneIsVisible =
-                                                              true;
-                                                          _enterPhoneOpacity =
-                                                              1;
-                                                        });
-                                                        _pageController
-                                                            .nextPage(
-                                                          duration: Duration(
-                                                              milliseconds:
-                                                                  215),
-                                                          curve:
-                                                              Curves.elasticIn,
-                                                        );
-                                                      },
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
+                                  ),
                                 ),
-                              ),
-                              Container(
-                                width: size.width,
-                                height: size.height - Constants.APP_BAR_HEIGHT,
-                                color: theme.background,
-                                padding: EdgeInsets.fromLTRB(
-                                  size.width * .1,
-                                  size.width * .125,
-                                  size.width * .1,
-                                  size.width * .125,
-                                ),
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: <Widget>[
-                                    Text(
-                                      'Please enter the SMS Code Sent To Your Phone',
-                                      style: TextStyle(fontSize: 35.0),
-                                    ),
-                                    SizedBox(height: 16),
-                                    Text(
-                                        'To make sure this number is yours, we will send you a text message with a 6-digit verification code. Standard rates apply',
-                                        style: TextStyle(
-                                          fontSize: 20,
-                                        )),
-                                    SizedBox(height: 16),
-                                    Form(
-                                      //key: _store.phoneNumberFormKey,
+                                Visibility(
+                                  visible: _codeSentIsVisible,
+                                  child: AnimatedOpacity(
+                                    duration: Duration(milliseconds: 500),
+                                    opacity: _codeSentOpacity,
+                                    child: GestureDetector(
+                                      onTap: () {
+                                        _pageController.jumpToPage(1);
+                                      },
                                       child: Column(
                                         children: <Widget>[
-                                          TextField(
-                                            decoration: InputDecoration(
-                                              labelText: 'SMS Code',
-                                              border: OutlineInputBorder(),
-                                              errorText: _errors['smsCode'],
-                                              errorStyle: TextStyle(
-                                                color: Colors.red,
-                                                fontWeight: FontWeight.bold,
-                                                fontSize: 15,
-                                                letterSpacing: 0.2,
-                                                // backgroundColor: Colors.white.withOpacity(0.2),
-                                              ),
-                                              errorMaxLines: 3,
+                                          Text(
+                                            'We will send a One Time Password to this mobile number',
+                                            style: TextStyle(
+                                              fontSize: 20,
+                                              color: theme.onBackground,
                                             ),
-                                            onChanged: (String value) {
-                                              _handleFormInputsOnChange(
-                                                'smsCode',
-                                                value,
-                                              );
-                                            },
-                                            keyboardType: TextInputType.number,
-                                            maxLength: 6,
                                           ),
-                                          SizedBox(height: 16),
-                                          SubmitButton(
-                                            text: 'Next',
-                                            handleOnSubmit: _handleSubmit,
-                                            isSubmitting: _submitting,
-                                            formIsValid:
-                                                _errors['phone'] == null,
-                                          ),
-                                          SizedBox(height: 16),
-                                          Row(
+                                          Flex(
+                                            direction: Axis.vertical,
                                             children: <Widget>[
                                               Expanded(
                                                 child: RaisedButton(
-                                                  color: theme.secondary
-                                                      .withOpacity(0.7),
-                                                  child: Text(
-                                                    'Resend Code',
-                                                    style: TextStyle(
-                                                      color: Colors.white,
-                                                    ),
-                                                  ),
+                                                  child: Text('Enter Code'),
                                                   onPressed: () {
-                                                    FocusScope.of(context)
-                                                        .requestFocus(
-                                                      FocusNode(),
+                                                    store.dispatch(
+                                                      SetLoadingValuesAction(
+                                                        isOpen: true,
+                                                        showIcon: state
+                                                            .loadingState
+                                                            .showIcon,
+                                                        title: state
+                                                            .loadingState.title,
+                                                        text: state
+                                                            .loadingState.text,
+                                                      ),
                                                     );
-                                                    _resendSMSCode();
+                                                    setState(() {
+                                                      _codeSentIsVisible =
+                                                          false;
+                                                      _codeSentOpacity = 0;
+                                                      _enterPhoneIsVisible =
+                                                          true;
+                                                      _enterPhoneOpacity = 1;
+                                                    });
+                                                    _pageController.nextPage(
+                                                      duration: Duration(
+                                                          milliseconds: 215),
+                                                      curve: Curves.elasticIn,
+                                                    );
                                                   },
                                                 ),
-                                              )
+                                              ),
                                             ],
                                           ),
                                         ],
                                       ),
                                     ),
-                                  ],
+                                  ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
-                        ),
+                          Container(
+                            width: size.width,
+                            height: size.height - Constants.APP_BAR_HEIGHT,
+                            color: theme.background,
+                            padding: EdgeInsets.fromLTRB(
+                              size.width * .1,
+                              size.width * .125,
+                              size.width * .1,
+                              size.width * .125,
+                            ),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: <Widget>[
+                                Text(
+                                  'Please enter the SMS Code Sent To Your Phone',
+                                  style: TextStyle(fontSize: 35.0),
+                                ),
+                                SizedBox(height: 16),
+                                Text(
+                                    'To make sure this number is yours, we will send you a text message with a 6-digit verification code. Standard rates apply',
+                                    style: TextStyle(
+                                      fontSize: 20,
+                                    )),
+                                SizedBox(height: 16),
+                                Form(
+                                  //key: _store.phoneNumberFormKey,
+                                  child: Column(
+                                    children: <Widget>[
+                                      TextField(
+                                        decoration: InputDecoration(
+                                          labelText: 'SMS Code',
+                                          border: OutlineInputBorder(),
+                                          errorText: _errors['smsCode'],
+                                          errorStyle: TextStyle(
+                                            color: Colors.red,
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 15,
+                                            letterSpacing: 0.2,
+                                            // backgroundColor: Colors.white.withOpacity(0.2),
+                                          ),
+                                          errorMaxLines: 3,
+                                        ),
+                                        onChanged: (String value) {
+                                          _handleFormInputsOnChange(
+                                            'smsCode',
+                                            value,
+                                          );
+                                        },
+                                        keyboardType: TextInputType.number,
+                                        maxLength: 6,
+                                      ),
+                                      SizedBox(height: 16),
+                                      SubmitButton(
+                                        text: 'Next',
+                                        handleOnSubmit: _handleSubmit,
+                                        isSubmitting: _submitting,
+                                        formIsValid: _errors['phone'] == null,
+                                      ),
+                                      SizedBox(height: 16),
+                                      Row(
+                                        children: <Widget>[
+                                          Expanded(
+                                            child: SubmitButton(
+                                              isSubmitting: false,
+                                              handleOnSubmit: () {},
+                                              text: 'Get Cfdsafdsafaode',
+                                              formIsValid: true,
+                                            ),
+                                            // )Expanded(
+                                            //   child: RaisedButton(
+                                            //     color: theme.secondary
+                                            //         .withOpacity(0.7),
+                                            //     child: Text(
+                                            //       'Resend Code',
+                                            //       style: TextStyle(
+                                            //         color: Colors.white,
+                                            //       ),
+                                            //     ),
+                                            //     onPressed: () {
+                                            //       FocusScope.of(context)
+                                            //           .requestFocus(
+                                            //         FocusNode(),
+                                            //       );
+                                            //       _resendSMSCode();
+                                            //     },
+                                            //   ),
+                                            // )
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
-                    );
-                  },
-                ),
-              );
-            }
+                    ),
+                  ),
+                );
+              },
+            ),
+          );
+        }
 
-            return _widget;
-          },
-        );
+        return _widget;
       },
     );
   }

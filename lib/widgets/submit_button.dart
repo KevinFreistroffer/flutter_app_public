@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:loading/loading.dart';
 import 'package:loading/indicator/ball_pulse_indicator.dart';
 import 'package:provider/provider.dart';
@@ -45,18 +46,17 @@ class _SubmitButtonState extends State<SubmitButton> {
           fontSize: 21,
           fontWeight: FontWeight.bold,
           letterSpacing: 1,
+          color: Colors.black.withOpacity(0.75),
         ),
       );
     } else {
       child = Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: <Widget>[
-          Text('THINKING'),
-          SizedBox(width: size.width * .05),
           Loading(
             indicator: BallPulseIndicator(),
             size: 20.0,
-            color: theme.onBackground,
+            color: Colors.black.withOpacity(0.75),
           ),
         ],
       );
@@ -72,7 +72,7 @@ class _SubmitButtonState extends State<SubmitButton> {
       shape = RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(5),
         side: BorderSide(
-          color: theme.onBackground,
+          color: theme.onBackground.withOpacity(0.25),
           width: 1.0,
         ),
       );
@@ -86,11 +86,11 @@ class _SubmitButtonState extends State<SubmitButton> {
             child: RaisedButton(
               shape: shape,
               padding: EdgeInsets.fromLTRB(10, 17, 10, 17),
-              disabledColor: theme.secondary,
+              disabledColor: Colors.yellow,
               disabledTextColor: theme.onBackground,
               onPressed: widget.isSubmitting ? null : widget.handleOnSubmit,
               child: child,
-              textColor: theme.onSecondary.withOpacity(0.5),
+              textColor: Colors.white,
             ),
           ),
         )

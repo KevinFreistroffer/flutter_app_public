@@ -5,7 +5,6 @@ import 'package:flutter_keto/services/database.service.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:meta/meta.dart';
 import 'storage.service.dart';
-import 'loading.service.dart';
 import '../constants.dart';
 
 class AuthenticationService {
@@ -13,7 +12,6 @@ class AuthenticationService {
   final GoogleSignIn _googleSignIn;
   final StorageService _storageService;
   final DatabaseService _databaseService;
-  final LoadingService _loadingService;
   final StreamController phoneAuthenticationController =
       StreamController<Map>.broadcast();
 
@@ -21,8 +19,7 @@ class AuthenticationService {
       : _firebaseAuth = firebaseAuth ?? FirebaseAuth.instance,
         _googleSignIn = googleSignin ?? GoogleSignIn(),
         _storageService = StorageService(),
-        _databaseService = DatabaseService(),
-        _loadingService = LoadingService();
+        _databaseService = DatabaseService();
 
   Future<dynamic> beginSignInWithGoogle() async {
     var result;
@@ -35,7 +32,6 @@ class AuthenticationService {
     if (signInResponse is GoogleSignInAccount) {
       googleAuth = await signInResponse.authentication;
     } else {
-      print('signInResponse is NOT GoogleSignInAccount $signInResponse');
       return Constants.ERROR_PLEASE_CHECK_NETWORK;
     }
 
@@ -48,7 +44,8 @@ class AuthenticationService {
       result = authCredential;
     } catch (error) {
       print(
-          'An error occurred in authenticationService.signInWithGoogle() $error');
+        'An error occurred in authenticationService.signInWithGoogle() $error',
+      );
       result = error.toString();
     }
 
@@ -232,8 +229,6 @@ class AuthenticationService {
   }
 
   void verificationFailedCallback(error) {
-    print('authenticationService verificationFailedCallback() error $error');
-
     if (error is AuthException) {
       addToPhoneAuthenticationStream(
         phoneVerificationInProgress: false,

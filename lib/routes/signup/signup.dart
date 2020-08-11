@@ -1,18 +1,18 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/painting.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:email_validator/email_validator.dart';
+import 'package:flutter_keto/actions/loading_actions.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_redux/flutter_redux.dart';
 import 'package:redux/redux.dart';
-import '../../models/new_user.dart';
 import 'styles.dart';
 import '../../services/authentication.service.dart';
 import '../../services/database.service.dart';
 import '../../services/storage.service.dart';
-import '../../services/loading.service.dart';
 import '../../constants.dart';
 import '../../widgets/loading_screen/LoadingScreen.dart';
 import 'step_email_and_username.dart';
@@ -20,25 +20,17 @@ import 'step_passwords.dart';
 import '../../theme.dart';
 import '../../wait.dart';
 import '../../error_dialog.dart';
-import '../../form_control.dart';
+import '../../widgets/form_control.dart';
 import '../../store.dart';
 import '../../state/app_state.dart';
-import '../../models/user_model.dart';
 import '../../actions/user_actions.dart';
-
-class SignUp extends StatefulWidget {
-  SignUp({Key key}) : super(key: key);
-
-  @override
-  SignUpState createState() => SignUpState();
-}
+import '../../models/new_user.dart';
 
 abstract class Step {
   Map _errors;
 
   void setInitialErrorValues(Map keyValues) {
     _errors = keyValues;
-    print('setInitialErrorValues $_errors');
   }
 
   Map get errors => _errors;
@@ -57,7 +49,7 @@ abstract class Step {
       );
 }
 
-abstract class FormControl2 {
+abstract class FormControl {
   dynamic _value;
   dynamic _error;
 
@@ -74,20 +66,25 @@ class EmailAndUsername extends Step {}
 
 class Passwords extends Step {}
 
-class Email extends FormControl2 {}
+class Email extends FormControl {}
 
-class Username extends FormControl2 {}
+class Username extends FormControl {}
 
-class Password extends FormControl2 {}
+class Password extends FormControl {}
 
-class ConfirmPassword extends FormControl2 {}
+class ConfirmPassword extends FormControl {}
+
+class SignUp extends StatefulWidget {
+  SignUp({Key key}) : super(key: key);
+
+  @override
+  SignUpState createState() => SignUpState();
+}
 
 class SignUpState extends State<SignUp> {
   final formKey = GlobalKey<FormState>();
   final AuthenticationService _authService = AuthenticationService();
   final DatabaseService _databaseService = DatabaseService();
-  final StorageService _storageService = StorageService();
-  final LoadingService _loadingService = LoadingService();
   final TextEditingController usernameController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
@@ -117,6 +114,8 @@ class SignUpState extends State<SignUp> {
     'confirmPassword': '',
   };
 
+  String _formError = '';
+
   SignUpState() {
     _emailAndUsername = EmailAndUsername()
       ..setInitialErrorValues({'email': '', 'username': ''});
@@ -141,15 +140,9 @@ class SignUpState extends State<SignUp> {
   void initState() {
     super.initState();
     _steps.addAll([_emailAndUsername, _passwords]);
-
-    _pageController = PageController(initialPage: 0, keepPage: true);
     _currentStep = _steps[0];
     _currentPage = 0;
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
+    _pageController = PageController(initialPage: 0, keepPage: true);
   }
 
   void _handleInputOnChanged(String name, String value) {
@@ -178,19 +171,17 @@ class SignUpState extends State<SignUp> {
         break;
     }
 
-    setState(() {
-      _formValues[name] = value.trim();
+    setState(() => _formValues[name] = value.trim());
 
-      if (_currentStep is EmailAndUsername) {
-        _emailAndUsername.setError(
-          {name: value.isNotEmpty ? '' : _emailAndUsername.errors[name]},
-        );
-      } else {
-        _passwords.setError(
-          {name: value.isNotEmpty ? '' : _passwords.errors[name]},
-        );
-      }
-    });
+    if (_currentStep is EmailAndUsername) {
+      _emailAndUsername.setError(
+        {name: value.isNotEmpty ? '' : _emailAndUsername.errors[name]},
+      );
+    } else {
+      _passwords.setError(
+        {name: value.isNotEmpty ? '' : _passwords.errors[name]},
+      );
+    }
   }
 
   bool _currentStepIsValidAndNotDirty(Step step) {
@@ -209,7 +200,6 @@ class SignUpState extends State<SignUp> {
 
       return;
     }
-
     _validateValues();
 
     if (step is EmailAndUsername) {
@@ -225,7 +215,7 @@ class SignUpState extends State<SignUp> {
 
         final List snapshots = await _emailAndUsernameAreUnique();
 
-        // Email and username are available to sign up
+        // Email and username are available to sign up with
         if (snapshots.every((snapshot) => snapshot == null)) {
           setState(() {
             //_errors['form'] = null;
@@ -248,12 +238,12 @@ class SignUpState extends State<SignUp> {
                   Constants.ERROR_ACCOUNT_EXISTS_WITH_EMAIL_OR_USERNAME);
             }
           } else {
-            // setState(
-            //   () => _errors['form'] =
-            //       Constants.ERROR_ACCOUNT_EXISTS_WITH_EMAIL_OR_USERNAME,
-            // );
+            setState(
+              () => _formError =
+                  Constants.ERROR_ACCOUNT_EXISTS_WITH_EMAIL_OR_USERNAME,
+            );
 
-            // _displayErrorDialog(_errors['form'], barrierDismissible: true);
+            _displayErrorDialog(_formError, barrierDismissible: true);
           }
         }
       } else {
@@ -263,8 +253,6 @@ class SignUpState extends State<SignUp> {
 
     if (step is Passwords) {
       if (_password.isValid() && _confirmPassword.isValid()) {
-        // _loadingService.add(isOpen: true, );
-
         // _databaseService.updateUser(password: _formValues['password']);
         // Firebase signs the user in. They're authenticated.
         final dynamic authResult =
@@ -276,7 +264,6 @@ class SignUpState extends State<SignUp> {
         if (authResult is AuthResult) {
           store.dispatch(SetUserValuesAction(uid: authResult.user.uid));
           // success
-
           final createResponse =
               await _databaseService.createUserWithAdditionalProperties(
             NewUser(
@@ -313,7 +300,14 @@ class SignUpState extends State<SignUp> {
         // Wait 2.3 seconds
         await wait(ms: 2300);
         setState(() => _submitting = false);
-        _loadingService.add(isOpen: true);
+        store.dispatch(
+          SetLoadingValuesAction(
+            isOpen: true,
+            showIcon: store.state.loadingState.showIcon,
+            title: store.state.loadingState.title,
+            text: store.state.loadingState.text,
+          ),
+        );
 
         await wait(ms: 5500);
 
@@ -564,9 +558,99 @@ class SignUpState extends State<SignUp> {
     );
   }
 
+  _displayErrorDialog(
+    String error, {
+    bool barrierDismissible = true,
+  }) {
+    final AppTheme theme = Provider.of<AppTheme>(context, listen: false);
+    final LineSplitter ls = LineSplitter();
+    final styles = ErrorDialogStyles.alertDialog;
+
+    // split the string at the \n, output a new Text().SizedBox(height)
+    List strings = ls.convert(error);
+    strings = strings.map((s) => s.trim()).toList();
+
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: barrierDismissible, // user must tap button!
+      builder: (BuildContext context) {
+        final Size size = MediaQuery.of(context).size;
+        final isPortrait = size.width <
+            size.height; // hacky. how to access orientation? OrientationModel?
+
+        return AlertDialog(
+          backgroundColor: theme.primaryVariant,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10.0),
+          ),
+          title: Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(10),
+                topRight: Radius.circular(10),
+              ),
+              color: Colors.red[300],
+            ),
+            padding: EdgeInsets.fromLTRB(
+              size.width * .1,
+              isPortrait ? size.height * .05 : size.height * .025,
+              size.width * .1,
+              isPortrait ? size.height * .05 : size.height * .025,
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[
+                Icon(
+                  Icons.error,
+                  size: isPortrait ? 60 : 35,
+                  color: Colors.white,
+                ),
+              ],
+            ),
+          ),
+          titlePadding: styles['titlePadding'],
+          buttonPadding: styles['buttonPadding'],
+          contentPadding: styles['contentPadding'],
+          content: Container(
+            constraints: BoxConstraints(
+              maxWidth: 150,
+            ),
+            color: theme.primaryVariant,
+            child: SingleChildScrollView(
+              child: ListBody(
+                children: <Widget>[
+                  for (var s in strings)
+                    Container(
+                      padding: EdgeInsets.only(top: 10, bottom: 10),
+                      child: Text(s),
+                    )
+                ],
+              ),
+            ),
+          ),
+          actions: <Widget>[
+            GestureDetector(
+              child: Text(
+                'DISMISS',
+                style: TextStyle(
+                    fontSize: styles['actions']['flatButton']['text']
+                        ['fontSize'],
+                    fontWeight: styles['actions']['flatButton']['text']
+                        ['fontWeight'],
+                    color: theme.onPrimaryVariant),
+              ),
+              onTap: () => Navigator.of(context).pop(),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final Size size = MediaQuery.of(context).size;
+    final AppTheme theme = Provider.of<AppTheme>(context);
 
     return StoreConnector<AppState, AppState>(
       converter: (store) => store.state,
@@ -579,54 +663,57 @@ class SignUpState extends State<SignUp> {
           );
         }
 
-        return Scaffold(
-          backgroundColor: Colors.white,
-          appBar: null,
-          body: OrientationBuilder(
-            builder: (context, orientation) {
-              return Container(
-                height: size.height,
-                child: Form(
-                  child: PageView(
-                    controller: _pageController,
-                    physics: NeverScrollableScrollPhysics(),
-                    onPageChanged: (int pageIndex) {
-                      setState(
-                        () {
-                          _currentStep = _steps[pageIndex];
-                          _currentPage = pageIndex;
-                        },
-                      );
-                    },
-                    children: <Widget>[
-                      EmailAndUsernameStep(
-                        key: new PageStorageKey('emailAndUsername'),
-                        usernameTextController: usernameController,
-                        emailTextController: emailController,
-                        pageController: _pageController,
-                        emailAndUsername: _emailAndUsername,
-                        email: _email,
-                        username: _username,
-                        errors: _emailAndUsername.errors,
-                        submitting: _submitting,
-                        handleOnChanged: _handleInputOnChanged,
-                        handleOnSubmit: _handleFormSubmission,
-                      ),
-                      PasswordsStep(
-                        key: new PageStorageKey('passwords'),
-                        pageController: _pageController,
-                        password: _password,
-                        confirmPassword: _confirmPassword,
-                        // passwords: _passwords,
-                        submitting: _submitting,
-                        handleOnChanged: _handleInputOnChanged,
-                        handleOnSubmit: _handleFormSubmission,
-                      ),
-                    ],
-                  ),
+        return Container(
+          child: Scaffold(
+            backgroundColor: Colors.white,
+            appBar: null,
+            body: Container(
+              height: size.height,
+              width: size.width,
+              constraints: BoxConstraints(
+                minHeight: size.height,
+              ),
+              child: Form(
+                child: PageView(
+                  controller: _pageController,
+                  physics: NeverScrollableScrollPhysics(),
+                  onPageChanged: (int pageIndex) {
+                    setState(
+                      () {
+                        _currentStep = _steps[pageIndex];
+                        _currentPage = pageIndex;
+                      },
+                    );
+                  },
+                  children: <Widget>[
+                    //Text('abcdefg'),
+                    EmailAndUsernameStep(
+                      key: new PageStorageKey('emailAndUsername'),
+                      usernameTextController: usernameController,
+                      emailTextController: emailController,
+                      pageController: _pageController,
+                      emailAndUsername: _emailAndUsername,
+                      email: _email,
+                      username: _username,
+                      errors: _emailAndUsername.errors,
+                      submitting: _submitting,
+                      handleOnChanged: _handleInputOnChanged,
+                      handleOnSubmit: _handleFormSubmission,
+                    ),
+                    PasswordsStep(
+                      key: new PageStorageKey('passwords'),
+                      pageController: _pageController,
+                      password: _password,
+                      confirmPassword: _confirmPassword,
+                      // passwords: _passwords,
+                      submitting: _submitting,
+                      handleOnChanged: _handleInputOnChanged,
+                      handleOnSubmit: _handleFormSubmission,
+                    ),
+                  ],
                 ),
-              );
-            },
+              ),
+            ),
           ),
         );
       },

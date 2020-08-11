@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'styles/ErrorDialog.dart';
 
 class ErrorDialogStyles {
   static const Map alertDialog = {

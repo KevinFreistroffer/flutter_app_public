@@ -18,16 +18,6 @@ class GoogleButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Size size = MediaQuery.of(context).size;
-    dynamic submitButtonIcon;
-
-    if (!isSendingRequest) {
-      submitButtonIcon = Icon(Icons.send, color: Colors.white);
-    } else {
-      submitButtonIcon = Loading(
-          indicator: BallPulseIndicator(), size: 20.0, color: Colors.white);
-    }
-
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: <Widget>[

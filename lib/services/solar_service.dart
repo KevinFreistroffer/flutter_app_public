@@ -46,33 +46,21 @@ class SolarService {
     print('geomagResult $geomagResult');
   }
 
-  Future<Map> getAzimuthAndAltitude() async {
-    print('store.state.positionState.latitude and longitude');
-    print(store.state.positionState.latitude);
-    print(store.state.positionState.longitude);
-    var sunCalcPosition = SunCalc.getPosition(
-      DateTime.now().toLocal(),
-      store.state.positionState.latitude,
-      store.state.positionState.longitude * -1,
-    );
-
-    print('sunCalcPosition azimuth ${sunCalcPosition['azimuth']}');
-    print('sunCalcPosition altitude ${sunCalcPosition['altitude']}');
+  Future<Map> getSolarValues() async {
+    var longitude = store.state.positionState.longitude;
+    var latitude = store.state.positionState.latitude;
 
     var spaResult = spaCalculate(
       SPAParams(
         time: DateTime.now().toLocal(),
-        latitude: store.state.positionState.latitude,
-        longitude: store.state.positionState.longitude,
+        latitude: latitude,
+        longitude: longitude,
       ),
     );
 
-    print('spaResult ${spaResult.azimuth}');
+    print('spaResult.zenith ${spaResult.zenith}');
 
-    return {
-      'azimuth': spaResult.azimuth,
-      'altitude': sunCalcPosition['altitude'],
-    };
+    return {'azimuth': spaResult.azimuth, 'zenith': spaResult.zenith};
   }
 }
 

@@ -31,7 +31,8 @@ class DatabaseService {
       result = snapshot.documents.length > 0 ? snapshot.documents[0] : null;
     } catch (error) {
       print(
-          'An error occurred in DatabaseService getUserWithUsername() $error');
+        'An error occurred in DatabaseService getUserWithUsername() $error',
+      );
       result = error.toString();
       if (error.toString().contains("ERROR_NETWORK_REQUEST_FAILED")) {
         result = Constants.ERROR_NETWORK_REQUEST_FAILED; // Should be a constant
